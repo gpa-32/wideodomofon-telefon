@@ -65,6 +65,7 @@ final class Fields {
                         pass("sip_pass", "Hasło SIP", ""),
                         sel("sip_transport", "Transport", "", "udp=UDP", "tcp=TCP"),
                         num("sip_expires", "Odświeżanie rejestracji [s]", ""),
+                        text("answer_dtmf", "Kod odebrania dla serwera", "Zostaw puste, chyba że serwer SIP ma grupę z podglądem na wszystkich urządzeniach: wtedy po naciśnięciu „Odbierz” aplikacja wysyła ten kod, a serwer rozłącza pozostałe."),
                         text("stun_server", "Serwer STUN (poza domem)", "Np. stun.l.google.com:19302. Pomaga, gdy poza domem nie słychać rozmowy."),
                         bool("ice_enabled", "ICE", "Włącz tylko, jeśli serwer SIP obsługuje ICE.")),
                 new Group("Obraz z kamery",

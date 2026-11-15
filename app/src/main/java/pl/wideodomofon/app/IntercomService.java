@@ -439,18 +439,41 @@ public class IntercomService extends Service implements SipManager.Events {
         previewMode = false;
         stopRingtone();
         showCallUi(false);
+        pendingAnswerCode = false;
         if (Cfg.b("preview_answer") && Cfg.sipVideo()) {
-            // Podglad podczas dzwonienia: wiekszosc serwerow SIP nie przekazuje obrazu przed odebraniem,
-            // wiec odbieramy po cichu (mikrofon i glosnik wyciszone). Dla uzytkownika telefon nadal "dzwoni",
-            // a rozmowa zaczyna sie dopiero po nacisnieciu "Odbierz".
-            main.postDelayed(() -> {
-                if (state == RINGING && !pendingDtmf && !previewMode && sip.hasCall()) {
+            // Podglad podczas dzwonienia: serwer SIP nie przekazuje obrazu przed odebraniem, wiec poza siecia
+            // bramofonu odbieramy po cichu (mikrofon i glosnik wyciszone). Dla uzytkownika telefon nadal "dzwoni".
+            // W sieci bramofonu obraz daje RTSP, wiec cichego odebrania nie robimy i grupa dzwoni normalnie.
+            final String rtsp = Cfg.s("rtsp_url");
+            final boolean auto = "auto".equals(Cfg.s("video_source")) && !rtsp.isEmpty();
+            Thread t = new Thread(() -> {
+                final boolean local = auto && Diag.rtspReachable(rtsp, 800);
+                main.postDelayed(() -> {
+                    if (state != RINGING || pendingDtmf || previewMode || !sip.hasCall()) return;
+                    if (local) {
+                        L.i("Podglad: kamera dostepna lokalnie (RTSP) - bez cichego odebrania");
+                        return;
+                    }
                     previewMode = true;
                     micMuted = true;
                     L.i("Podglad: ciche odebranie, zeby obraz byl widoczny podczas dzwonienia");
-                    if (!sip.answer(true)) previewMode = false;
-                }
-            }, 500);
+                    if (sip.answer(true)) startRingtone(); // stos SIP przestaje dzwonic po odebraniu
+                    else previewMode = false;
+                }, 300);
+            }, "preview-probe");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+
+    private boolean pendingAnswerCode;
+
+    /** Kod DTMF "odebralem" - dla serwera z grupa dzwonienia, w ktorej wszystkie urzadzenia maja podglad. */
+    private void sendAnswerCode() {
+        String code = Cfg.s("answer_dtmf");
+        if (!code.isEmpty()) {
+            L.i("Odebranie: wysylam do serwera kod " + code);
+            sip.sendDtmf(code);
         }
     }
 
@@ -472,6 +495,7 @@ public class IntercomService extends Service implements SipManager.Events {
             mp.prepare();
             mp.start();
             ringPlayer = mp;
+            L.i("Dzwonek: start (tryb podgladu)");
         } catch (Throwable t) {
             L.e("Dzwonek w trybie podgladu", t);
         }
@@ -501,7 +525,7 @@ public class IntercomService extends Service implements SipManager.Events {
             // Ciche odebranie: obraz juz plynie, ale dla uzytkownika to nadal dzwonienie.
             sip.setMicMuted(true);
             sip.setSpeakerMuted(true);
-            startRingtone();
+            if (ringPlayer == null) startRingtone();
             L.i("Podglad: obraz podczas dzwonienia, rozmowa zacznie sie po \"Odbierz\"");
             Ui u = ui;
             if (u != null) u.refresh();
@@ -515,6 +539,10 @@ public class IntercomService extends Service implements SipManager.Events {
             pendingDtmf = false;
             main.postDelayed(() -> sip.sendDtmf(Cfg.s("dtmf_code")), 700);
         }
+        if (pendingAnswerCode) {
+            pendingAnswerCode = false;
+            main.postDelayed(this::sendAnswerCode, 700);
+        }
         Ui u = ui;
         if (u != null) u.refresh();
     }
@@ -525,6 +553,7 @@ public class IntercomService extends Service implements SipManager.Events {
         state = IDLE;
         pendingDtmf = false;
         previewMode = false;
+        pendingAnswerCode = false;
         stopRingtone();
         main.removeCallbacks(hangupAfterOpen);
         L.i("Polaczenie zakonczone: " + reason);
@@ -565,11 +594,13 @@ public class IntercomService extends Service implements SipManager.Events {
                 callStart = SystemClock.uptimeMillis();
                 L.i("Rozmowa rozpoczeta (po podgladzie)");
                 setVolume(AudioManager.STREAM_VOICE_CALL, Cfg.i("call_volume"));
+                sendAnswerCode();
                 Ui u = ui;
                 if (u != null) u.refresh();
                 return;
             }
             previewMode = false;
+            pendingAnswerCode = true;
             if (!sip.answer(false)) L.i("Nie udalo sie odebrac");
         });
     }

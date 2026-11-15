@@ -19,6 +19,19 @@ import java.util.List;
 public final class Diag {
     private Diag() {}
 
+    /** Czy kamera RTSP odpowiada z biezacej sieci (krotka proba polaczenia TCP). Nie wolac z watku glownego. */
+    public static boolean rtspReachable(String rtspUrl, int timeoutMs) {
+        try {
+            Uri u = Uri.parse(rtspUrl);
+            Socket s = new Socket();
+            s.connect(new InetSocketAddress(u.getHost(), u.getPort() > 0 ? u.getPort() : 554), timeoutMs);
+            s.close();
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public static String camera() {
         StringBuilder sb = new StringBuilder();
         sb.append("Tablet: ").append(IntercomService.localIp()).append("\n");

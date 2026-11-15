@@ -26,6 +26,7 @@ public final class Cfg {
             d.put("sip_pass", "");
             d.put("sip_transport", "udp");      // udp | tcp
             d.put("sip_expires", 300);
+            d.put("answer_dtmf", "");           // kod wysylany do serwera po prawdziwym odebraniu (grupa z podgladem)
             d.put("stun_server", "");           // np. stun.l.google.com:19302 - pomaga za NAT (siec komorkowa)
             d.put("ice_enabled", false);
             // Obraz
