@@ -474,8 +474,11 @@ public class IntercomService extends Service implements SipManager.Events {
 
     /** Kod DTMF "odebralem" - dla serwera z grupa dzwonienia, w ktorej wszystkie urzadzenia maja podglad. */
     private void sendAnswerCode() {
-        String code = Cfg.s("answer_dtmf");
-        if (!code.isEmpty()) {
+        String fromServer = sip.callAnswerCode;
+        String code = fromServer != null ? fromServer : Cfg.s("answer_dtmf");
+        if (code.isEmpty()) {
+            L.i("Odebranie: brak kodu odebrania (ustawienia SIP) - serwer nie rozlaczy pozostalych urzadzen");
+        } else {
             L.i("Odebranie: wysylam do serwera kod " + code);
             sip.sendDtmf(code);
         }

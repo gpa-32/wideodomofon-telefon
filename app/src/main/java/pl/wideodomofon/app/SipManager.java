@@ -47,6 +47,8 @@ public class SipManager {
     private long lastStartTry;
     private Object videoWindow;
     public volatile String regState = "-";
+    /** Kod odebrania podany przez serwer w naglowku X-Domofon-Answer biezacego polaczenia (albo null). */
+    public volatile String callAnswerCode;
     private int statsCount;
 
     private long streamsSince;
@@ -174,6 +176,17 @@ public class SipManager {
                 }
                 call = cl;
                 connected = false;
+                // Serwer moze podac kod odebrania w naglowku polaczenia - wtedy nie zalezy on od ustawien urzadzenia.
+                callAnswerCode = null;
+                try {
+                    CallParams rp = cl.getRemoteParams();
+                    String h = rp == null ? null : rp.getCustomHeader("X-Domofon-Answer");
+                    if (h != null && h.trim().matches("[0-9*#]{1,6}")) {
+                        callAnswerCode = h.trim();
+                        L.i("SIP: serwer podal kod odebrania dla tego polaczenia: " + callAnswerCode);
+                    }
+                } catch (Throwable ignored) {
+                }
                 String who = describe(cl);
                 if (Cfg.sipVideo() && Cfg.b("early_media")) {
                     // Obraz jeszcze przed odebraniem (183 Session Progress).

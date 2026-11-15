@@ -56,3 +56,15 @@ musi trafić do konferencji, a nie do `Dial()`.
 - Odrzucenie na jednym: pozostałe dwa dzwonią dalej.
 - „Otwórz furtkę" na urządzeniu, które nie odebrało: przekaźnik bramofonu zadziałał.
 - Nikt nie odbiera: po czasie dzwonienia wszystkie ekrany znikają, bramofon wraca do stanu spoczynku.
+
+## Zalecenie: kod odebrania w nagłówku połączenia (aplikacja v1.1.12+)
+
+Zamiast polegać na ustawieniu w każdym urządzeniu, serwer może dodać do INVITE wysyłanego do urządzeń
+w trybie konferencji nagłówek:
+
+    X-Domofon-Answer: *1
+
+Aplikacja użyje wtedy tego kodu po „Odbierz" dla tego jednego połączenia, niezależnie od swoich ustawień.
+W zwykłym połączeniu (bez konferencji) nagłówka ma nie być – aplikacja nie wyśle wtedy kodu z nagłówka,
+więc nie ma ryzyka, że kod odebrania trafi do bramofonu i otworzy furtkę.
+W Asterisku (PJSIP): `Set(PJSIP_HEADER(add,X-Domofon-Answer)=*1)` w pre-dial handlerze kanału urządzenia.
