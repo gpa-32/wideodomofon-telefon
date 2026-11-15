@@ -114,6 +114,88 @@ public class IntercomService extends Service implements SipManager.Events {
         startWatchThread();
         setupRootAsync();
         BootReceiver.scheduleKeepAlive(this, 5 * 60 * 1000L);
+        watchNetwork();
+    }
+
+    // ------------------------------------------------------------------ zmiana sieci (Wi-Fi <-> siec komorkowa)
+
+    private android.net.ConnectivityManager.NetworkCallback netCallback;
+    private String netKey = "";
+    private boolean netChangedDuringCall;
+
+    /** Identyfikator biezacej sieci: jej numer i adresy IP. Pusty, gdy brak polaczenia. */
+    private String currentNetKey() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.Network n = cm.getActiveNetwork();
+            if (n == null) return "";
+            android.net.LinkProperties lp = cm.getLinkProperties(n);
+            StringBuilder sb = new StringBuilder(String.valueOf(n));
+            if (lp != null) {
+                sb.append(' ').append(lp.getInterfaceName());
+                for (android.net.LinkAddress la : lp.getLinkAddresses()) sb.append(' ').append(la.getAddress().getHostAddress());
+            }
+            return sb.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    private final Runnable netApply = new Runnable() {
+        @Override
+        public void run() {
+            String key = currentNetKey();
+            if (key.equals(netKey)) return;
+            String old = netKey;
+            netKey = key;
+            if (key.isEmpty()) {
+                L.i("Siec: brak polaczenia - czekam na powrot sieci");
+                return;
+            }
+            L.i("Siec: zmiana (" + (old.isEmpty() ? "brak" : old) + " -> " + key + ")");
+            if (state == IDLE) {
+                // Stara rejestracja wskazuje poprzedni adres - serwer dzwonilby w proznie.
+                // Pelny restart stosu SIP otwiera nowe polaczenie i rejestruje nowy adres.
+                L.i("Siec: rejestruje SIP od nowa pod nowym adresem");
+                sip.restart();
+            } else {
+                netChangedDuringCall = true;
+                L.i("Siec: trwa polaczenie - ponowna rejestracja SIP po jego zakonczeniu");
+            }
+        }
+    };
+
+    private void watchNetwork() {
+        try {
+            netKey = currentNetKey();
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            netCallback = new android.net.ConnectivityManager.NetworkCallback() {
+                private void changed() {
+                    main.removeCallbacks(netApply);
+                    main.postDelayed(netApply, 2000); // chwila na ustabilizowanie nowej sieci
+                }
+
+                @Override
+                public void onAvailable(android.net.Network network) {
+                    changed();
+                }
+
+                @Override
+                public void onLost(android.net.Network network) {
+                    changed();
+                }
+
+                @Override
+                public void onLinkPropertiesChanged(android.net.Network network, android.net.LinkProperties lp) {
+                    changed();
+                }
+            };
+            cm.registerDefaultNetworkCallback(netCallback);
+        } catch (Throwable t) {
+            L.e("Siec: obserwowanie zmian", t);
+        }
     }
 
     @Override
@@ -129,6 +211,13 @@ public class IntercomService extends Service implements SipManager.Events {
     @Override
     public void onDestroy() {
         L.i("Usluga: zatrzymana - zaplanowano ponowny start");
+        try {
+            if (netCallback != null) {
+                ((android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
+                        .unregisterNetworkCallback(netCallback);
+            }
+        } catch (Throwable ignored) {
+        }
         alive = false;
         main.removeCallbacksAndMessages(null);
         try {
@@ -440,6 +529,15 @@ public class IntercomService extends Service implements SipManager.Events {
         main.removeCallbacks(hangupAfterOpen);
         L.i("Polaczenie zakonczone: " + reason);
         closeUiSession();
+        if (netChangedDuringCall) {
+            netChangedDuringCall = false;
+            main.postDelayed(() -> {
+                if (state == IDLE) {
+                    L.i("Siec: zmienila sie podczas polaczenia - rejestruje SIP od nowa");
+                    sip.restart();
+                }
+            }, 1500);
+        }
     }
 
     // ------------------------------------------------------------------ akcje (ekran / www)

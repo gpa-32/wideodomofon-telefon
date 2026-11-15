@@ -711,6 +711,33 @@ def test_phone(door):
         time.sleep(4)
 
 
+def test_network(door):
+    log("=== Zmiana sieci (Wi-Fi -> siec komorkowa -> Wi-Fi) ===")
+    def log_has(text, since):
+        return any(text in ln for ln in api("/api/log")[1].splitlines()[since:])
+    n0 = len(api("/api/log")[1].splitlines())
+    try:
+        shell("svc wifi disable")
+        ok = wait_for(lambda: log_has("rejestruje SIP od nowa", n0), 40, step=2)
+        check("Siec: po wylaczeniu Wi-Fi aplikacja rejestruje SIP od nowa", ok,
+              " | ".join([ln for ln in api("/api/log")[1].splitlines()[n0:] if "Siec" in ln][-3:]))
+        n1 = len(api("/api/log")[1].splitlines())
+        shell("svc wifi enable")
+        ok = wait_for(lambda: log_has("rejestruje SIP od nowa", n1), 60, step=2)
+        check("Siec: po wlaczeniu Wi-Fi aplikacja rejestruje SIP od nowa", ok,
+              " | ".join([ln for ln in api("/api/log")[1].splitlines()[n1:] if "Siec" in ln][-3:]))
+    finally:
+        shell("svc wifi enable")
+        time.sleep(8)
+    d = ring(door, "Po zmianie sieci")
+    api("/api/action", body={"name": "hangup"})
+    r = door.wait(d, "final", 10)
+    check("Po zmianie sieci: polaczenia nadal dochodza", r is not None and r >= 400, "kod SIP: %s" % r)
+    if r is None:
+        door.cancel(d)
+    back_to_previous("Po zmianie sieci")
+
+
 def test_recovery(door):
     log("=== Odpornosc: nagle ubicie procesu ===")
     pid = shell("pidof " + PKG).strip()
@@ -750,7 +777,7 @@ def main():
     door = Doorphone()
 
     steps = [test_start, test_web, test_provision, test_rtsp, lambda: test_reject(door), lambda: test_answer(door),
-             lambda: test_gate(door), lambda: test_gate_fallback(door), lambda: test_preview(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_recovery(door)]
+             lambda: test_gate(door), lambda: test_gate_fallback(door), lambda: test_preview(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_network(door), lambda: test_recovery(door)]
     for s in steps:
         try:
             s()

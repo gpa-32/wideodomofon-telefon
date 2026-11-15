@@ -408,8 +408,8 @@ public class SipManager {
             if (now - lastStartTry > 30000) start();
             return;
         }
-        if (accountConfigured && !regOk && call == null && now - lastOk > 180000) {
-            L.i("SIP: brak rejestracji od 3 minut - restart stosu SIP");
+        if (accountConfigured && !regOk && call == null && now - lastOk > 60000) {
+            L.i("SIP: brak rejestracji od minuty - restart stosu SIP");
             restart();
         }
     }
