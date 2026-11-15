@@ -49,6 +49,60 @@ public class SipManager {
     public volatile String regState = "-";
     private int statsCount;
 
+    private long streamsSince;
+
+    private void requestKeyFrame() {
+        try {
+            if (call != null && connected && Cfg.sipVideo()) call.sendVfuRequest();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private String videoSummary() {
+        try {
+            if (call == null) return "brak polaczenia";
+            CallParams rp = call.getRemoteParams();
+            CallParams cp = call.getCurrentParams();
+            boolean offered = rp != null && rp.isVideoEnabled();
+            boolean agreed = cp != null && cp.isVideoEnabled();
+            String codec = "";
+            try {
+                org.linphone.core.PayloadType pt = cp == null ? null : cp.getUsedVideoPayloadType();
+                if (pt != null) codec = " " + pt.getMimeType();
+            } catch (Throwable ignored) {
+            }
+            CallStats vs = call.getVideoStats();
+            float down = vs == null ? 0 : vs.getDownloadBandwidth();
+            return String.format(java.util.Locale.US, "w polaczeniu od drugiej strony: %s, uzgodnione: %s%s, odbior %.0f kb/s",
+                    offered ? "tak" : "NIE", agreed ? "tak" : "NIE", codec, down);
+        } catch (Throwable t) {
+            return "blad odczytu: " + t;
+        }
+    }
+
+    /** Opis przyczyny braku obrazu SIP do pokazania na ekranie, albo null gdy obraz dociera / za wczesnie na ocene. */
+    public String videoProblem() {
+        try {
+            if (call == null || !connected) return null;
+            CallParams rp = call.getRemoteParams();
+            CallParams cp = call.getCurrentParams();
+            if (rp != null && !rp.isVideoEnabled()) {
+                return "Połączenie przyszło bez obrazu – bramofon nie wysyła wideo w rozmowie SIP albo serwer SIP je usuwa.";
+            }
+            if (cp != null && !cp.isVideoEnabled()) {
+                return "Obraz nie został uzgodniony – niezgodny kodek wideo (wymagany H.264).";
+            }
+            if (SystemClock.uptimeMillis() - streamsSince < 6000) return null;
+            CallStats vs = call.getVideoStats();
+            if (vs == null || vs.getDownloadBandwidth() < 1) {
+                return "Obraz uzgodniony, ale dane wideo nie docierają – serwer SIP nie przekazuje wideo albo blokuje je sieć (NAT).";
+            }
+            return null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Pomiar dzwieku w trakcie rozmowy - pokazuje w dzienniku, czy pakiety ida w obie strony. */
     private final Runnable audioStats = new Runnable() {
         @Override
@@ -64,9 +118,10 @@ public class SipManager {
                             "Audio: odbior %.0f kb/s, wysylanie %.0f kb/s, mikrofon %s, uprawnienie mikrofonu %s%s",
                             down, up, core.isMicEnabled() ? "wlaczony" : "wyciszony", perm ? "jest" : "BRAK",
                             down < 1 ? "  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)" : ""));
-                    CallStats vs = call.getVideoStats();
-                    if (vs != null && Cfg.sipVideo()) {
-                        L.i(String.format(java.util.Locale.US, "Wideo SIP: odbior %.0f kb/s", vs.getDownloadBandwidth()));
+                    if (Cfg.sipVideo()) {
+                        String problem = videoProblem();
+                        L.i("Wideo SIP: " + videoSummary() + (problem == null ? "" : "  <- " + problem));
+                        requestKeyFrame();
                     }
                 }
                 if (++statsCount < 6) main.postDelayed(this, 4000);
@@ -120,6 +175,10 @@ public class SipManager {
                     connected = true;
                     routeToSpeaker();
                     statsCount = 0;
+                    streamsSince = SystemClock.uptimeMillis();
+                    // Bramofon wysyla klatke kluczowa rzadko - prosimy o nia od razu, inaczej obraz bywa czarny.
+                    requestKeyFrame();
+                    main.postDelayed(SipManager.this::requestKeyFrame, 1500);
                     main.removeCallbacks(audioStats);
                     main.postDelayed(audioStats, 3000);
                     events.onConnected();
@@ -190,6 +249,19 @@ public class SipManager {
             pol.setAutomaticallyAccept(true);
             pol.setAutomaticallyInitiate(false);
             c.setVideoActivationPolicy(pol);
+            try {
+                StringBuilder codecs = new StringBuilder();
+                boolean h264 = false;
+                for (org.linphone.core.PayloadType pt : c.getVideoPayloadTypes()) {
+                    pt.enable(true);
+                    codecs.append(pt.getMimeType()).append(' ');
+                    if ("H264".equalsIgnoreCase(pt.getMimeType())) h264 = true;
+                }
+                L.i("SIP: kodeki wideo: " + codecs.toString().trim()
+                        + (h264 ? "" : "  <- UWAGA: brak H.264 na tym urzadzeniu, obraz z Akuvoxa przez SIP nie zadziala"));
+            } catch (Throwable t) {
+                L.e("SIP: kodeki wideo", t);
+            }
 
             c.setEchoCancellationEnabled(Cfg.b("echo_cancel"));
             c.setMicGainDb(Cfg.i("mic_gain_db"));

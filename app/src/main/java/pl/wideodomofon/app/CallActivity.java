@@ -79,6 +79,12 @@ public class CallActivity extends Activity implements IntercomService.Ui {
                 finishNow();
                 return;
             }
+            // Obraz z polaczenia SIP: gdy nie dociera, pokaz na ekranie, na ktorym etapie ginie.
+            if (sipVideoAttached && !test && svc.sip() != null && svc.state == IntercomService.IN_CALL) {
+                String problem = svc.sip().videoProblem();
+                videoStatus.setText(problem == null ? "" : problem);
+                videoStatus.setVisibility(problem == null ? View.GONE : View.VISIBLE);
+            }
             main.postDelayed(this, 2000);
         }
     };
