@@ -85,10 +85,12 @@ const GROUPS = [
     ["sip_user","text","Użytkownik / numer",""],
     ["sip_pass","password","Hasło SIP",""],
     ["sip_transport","select:udp=UDP,tcp=TCP","Transport",""],
-    ["sip_expires","number","Odświeżanie rejestracji [s]",""]
+    ["sip_expires","number","Odświeżanie rejestracji [s]",""],
+    ["stun_server","text","Serwer STUN (poza domem)","Np. stun.l.google.com:19302. Pomaga, gdy poza siecią domową nie słychać rozmowy."],
+    ["ice_enabled","bool","ICE","Włącz tylko, jeśli serwer SIP obsługuje ICE."]
   ]],
   ["Obraz z kamery", [
-    ["video_source","select:sip=Wideo w połączeniu SIP,rtsp=Strumień RTSP z bramofonu,jpeg=Zdjęcia JPEG z bramofonu (zapasowe)","Źródło obrazu","RTSP pokazuje obraz od pierwszej sekundy dzwonienia. JPEG to prostszy, zapasowy podgląd (kilka klatek na sekundę)."],
+    ["video_source","select:auto=Automatycznie: RTSP w domu – wideo SIP poza domem,sip=Wideo w połączeniu SIP,rtsp=Strumień RTSP z bramofonu,jpeg=Zdjęcia JPEG z bramofonu (zapasowe)","Źródło obrazu","RTSP pokazuje obraz od pierwszej sekundy dzwonienia. JPEG to prostszy, zapasowy podgląd (kilka klatek na sekundę)."],
     ["early_media","bool","Obraz SIP przed odebraniem","Działa, gdy bramofon wysyła wideo już podczas dzwonienia (early media)."],
     ["rtsp_url","text","Adres RTSP","Akuvox: rtsp://IP_BRAMOFONU/live/ch00_0 (z hasłem: rtsp://uzytkownik:haslo@IP/live/ch00_0)"],
     ["rtsp_tcp","bool","RTSP przez TCP","Zalecane w sieci Wi-Fi."],

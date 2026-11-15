@@ -26,8 +26,10 @@ public final class Cfg {
             d.put("sip_pass", "");
             d.put("sip_transport", "udp");      // udp | tcp
             d.put("sip_expires", 300);
+            d.put("stun_server", "");           // np. stun.l.google.com:19302 - pomaga za NAT (siec komorkowa)
+            d.put("ice_enabled", false);
             // Obraz
-            d.put("video_source", "sip");       // sip | rtsp | jpeg
+            d.put("video_source", "sip");       // sip | rtsp | jpeg | auto (RTSP w domu, wideo SIP poza domem)
             d.put("early_media", true);         // obraz SIP przed odebraniem
             d.put("rtsp_url", "");
             d.put("rtsp_tcp", true);
@@ -133,6 +135,12 @@ public final class Cfg {
     public static final String QR_PREFIX = "WD1:";
     /** Ustawienia zwiazane z konkretnym urzadzeniem - nie przenosimy ich kodem QR. */
     private static final String[] QR_SKIP = {"web_enabled", "web_port", "web_pass"};
+
+    /** Czy w polaczeniu SIP negocjowac obraz (zrodlo "sip" albo "auto"). */
+    public static synchronized boolean sipVideo() {
+        String v = data.optString("video_source", "sip");
+        return "sip".equals(v) || "auto".equals(v);
+    }
 
     public static boolean isPhone(Context c) {
         return c.getResources().getConfiguration().smallestScreenWidthDp < 600;

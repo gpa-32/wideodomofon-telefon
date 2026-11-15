@@ -83,14 +83,43 @@ public class CallActivity extends Activity implements IntercomService.Ui {
         }
     };
 
-    private void startVideo(IntercomService svc) {
+    /** Tryb "auto": RTSP, gdy kamera bramofonu jest osiagalna (siec domowa), inaczej obraz z polaczenia SIP. */
+    private void startVideo(final IntercomService svc) {
+        final String src = Cfg.s("video_source");
+        final String rtspUrl = Cfg.s("rtsp_url");
+        if (!"auto".equals(src) || rtspUrl.isEmpty()) {
+            startVideo(svc, "auto".equals(src) ? "sip" : src);
+            return;
+        }
+        Thread t = new Thread(() -> {
+            boolean reachable = false;
+            try {
+                android.net.Uri u = android.net.Uri.parse(rtspUrl);
+                java.net.Socket s = new java.net.Socket();
+                s.connect(new java.net.InetSocketAddress(u.getHost(), u.getPort() > 0 ? u.getPort() : 554), 800);
+                s.close();
+                reachable = true;
+            } catch (Throwable ignored) {
+            }
+            final boolean r = reachable;
+            runOnUiThread(() -> {
+                if (closed) return;
+                L.i("Ekran: tryb auto - kamera RTSP " + (r ? "osiagalna, uzywam RTSP" : "nieosiagalna (poza siecia domowa), uzywam obrazu SIP"));
+                startVideo(svc, r ? "rtsp" : "sip");
+            });
+        }, "video-auto");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void startVideo(IntercomService svc, String source) {
         String url = Cfg.s("rtsp_url");
         final RtspPlayer.Listener statusListener = msg -> {
             if (closed) return;
             videoStatus.setText(msg == null ? "" : msg);
             videoStatus.setVisibility(msg == null ? View.GONE : View.VISIBLE);
         };
-        if ("jpeg".equals(Cfg.s("video_source")) && !Cfg.s("jpeg_url").isEmpty()) {
+        if ("jpeg".equals(source) && !Cfg.s("jpeg_url").isEmpty()) {
             L.i("Ekran: podglad JPEG");
             video.setVisibility(View.GONE);
             jpegView.setVisibility(View.VISIBLE);
@@ -98,7 +127,7 @@ public class CallActivity extends Activity implements IntercomService.Ui {
             jpeg.start(jpegView, Cfg.s("jpeg_url"), statusListener);
             return;
         }
-        if ("rtsp".equals(Cfg.s("video_source")) && !url.isEmpty()) {
+        if ("rtsp".equals(source) && !url.isEmpty()) {
             rtsp = new RtspPlayer();
             L.i("Ekran: podglad RTSP");
             video.setVisibility(View.GONE);
@@ -110,10 +139,10 @@ public class CallActivity extends Activity implements IntercomService.Ui {
             svc.sip().setVideoWindow(video);
             sipVideoAttached = true;
             if (test) {
-                videoStatus.setText(!"sip".equals(Cfg.s("video_source"))
-                        ? "Nie wpisano adresu kamery (RTSP / JPEG) w panelu www."
+                videoStatus.setText(!Cfg.sipVideo()
+                        ? "Nie wpisano adresu kamery (RTSP / JPEG) w ustawieniach."
                         : "Źródło obrazu ustawione na „Wideo w połączeniu SIP” –\nobraz pojawi się tylko podczas prawdziwego połączenia.\n"
-                        + "Aby zobaczyć podgląd tutaj, wybierz w panelu www „Strumień RTSP z bramofonu” i zapisz.");
+                        + "Podgląd bez dzwonienia działa tylko przez RTSP, w sieci bramofonu.");
                 videoStatus.setVisibility(View.VISIBLE);
             }
         }

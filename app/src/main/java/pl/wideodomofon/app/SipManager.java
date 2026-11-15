@@ -63,7 +63,11 @@ public class SipManager {
                     L.i(String.format(java.util.Locale.US,
                             "Audio: odbior %.0f kb/s, wysylanie %.0f kb/s, mikrofon %s, uprawnienie mikrofonu %s%s",
                             down, up, core.isMicEnabled() ? "wlaczony" : "wyciszony", perm ? "jest" : "BRAK",
-                            down < 1 ? "  <- brak pakietow dzwieku od bramofonu (siec / zapora miedzy podsieciami)" : ""));
+                            down < 1 ? "  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)" : ""));
+                    CallStats vs = call.getVideoStats();
+                    if (vs != null && Cfg.sipVideo()) {
+                        L.i(String.format(java.util.Locale.US, "Wideo SIP: odbior %.0f kb/s", vs.getDownloadBandwidth()));
+                    }
                 }
                 if (++statsCount < 6) main.postDelayed(this, 4000);
             } catch (Throwable t) {
@@ -93,7 +97,7 @@ public class SipManager {
                 call = cl;
                 connected = false;
                 String who = describe(cl);
-                if ("sip".equals(Cfg.s("video_source")) && Cfg.b("early_media")) {
+                if (Cfg.sipVideo() && Cfg.b("early_media")) {
                     // Obraz jeszcze przed odebraniem (183 Session Progress).
                     main.post(() -> {
                         try {
@@ -204,6 +208,25 @@ public class SipManager {
             c.setUseRfc2833ForDtmf(!"info".equals(dm));
             c.setUseInfoForDtmf("info".equals(dm) || "both".equals(dm));
 
+            // Przechodzenie przez NAT (siec komorkowa, obce Wi-Fi): STUN i opcjonalnie ICE.
+            org.linphone.core.NatPolicy nat = null;
+            String stun = Cfg.s("stun_server");
+            if (!stun.isEmpty() || Cfg.b("ice_enabled")) {
+                try {
+                    nat = c.createNatPolicy();
+                    if (!stun.isEmpty()) {
+                        nat.setStunServer(stun);
+                        nat.setStunEnabled(true);
+                    }
+                    nat.setIceEnabled(Cfg.b("ice_enabled"));
+                    c.setNatPolicy(nat);
+                    L.i("SIP: NAT - STUN " + (stun.isEmpty() ? "brak" : stun) + ", ICE " + (Cfg.b("ice_enabled") ? "tak" : "nie"));
+                } catch (Throwable t) {
+                    nat = null;
+                    L.e("SIP: ustawienia NAT", t);
+                }
+            }
+
             accountConfigured = false;
             regOk = false;
             regState = "bez rejestracji (tylko połączenia po IP)";
@@ -224,6 +247,12 @@ public class SipManager {
                     ap.setServerAddress(srv);
                     ap.setRegisterEnabled(true);
                     ap.setExpires(Math.max(60, Cfg.i("sip_expires")));
+                    if (nat != null) {
+                        try {
+                            ap.setNatPolicy(nat);
+                        } catch (Throwable ignored) {
+                        }
+                    }
                     Account acc = c.createAccount(ap);
                     c.addAccount(acc);
                     c.setDefaultAccount(acc);
@@ -290,7 +319,7 @@ public class SipManager {
     public boolean answer(boolean muted) {
         if (core == null || call == null) return false;
         try {
-            boolean sipVideo = "sip".equals(Cfg.s("video_source"));
+            boolean sipVideo = Cfg.sipVideo();
             core.setMicEnabled(!muted);
             CallParams p = core.createCallParams(call);
             if (p == null) {
