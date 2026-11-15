@@ -1,0 +1,76 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'pl.wideodomofon.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "pl.wideodomofon.app"
+        minSdk 26
+        // Celowo 29: bez ograniczen uslug pierwszoplanowych z Androida 12-14,
+        // aplikacja jest instalowana recznie na zrootowanym tablecie.
+        targetSdk 29
+        // Numeracja 1.1.x kontynuuje wersje 1.0.x z repozytorium wideomonitor,
+        // dzieki czemu APK instaluje sie jako aktualizacja.
+        versionCode 100 + runNumber
+        versionName "1.1.${runNumber}"
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+            // Do testow na emulatorze: gradle assembleRelease -PextraAbi=x86_64
+            if (project.hasProperty('extraAbi')) {
+                abiFilters project.property('extraAbi').toString()
+            }
+        }
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore/release.jks')
+            storePassword 'wideodomofon'
+            keyAlias 'wideodomofon'
+            keyPassword 'wideodomofon'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packaging {
+        jniLibs {
+            // Linphone i libVLC dostarczaja te sama biblioteke standardowa C++
+            pickFirsts += ['**/libc++_shared.so']
+        }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'org.linphone:linphone-sdk-android:5.3.60'
+    implementation 'org.videolan.android:libvlc-all:3.6.0'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+}
