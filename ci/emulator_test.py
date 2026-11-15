@@ -351,6 +351,8 @@ class Doorphone:
                     self._reply_ok(c, m)
                 if m.method == "BYE" and want == "bye":
                     return True
+                if m.method == "INFO" and want == "info":
+                    return True
         return None
 
     def bye(self, d):
@@ -583,6 +585,34 @@ def test_gate(door):
     screenshot("06-po-furtce")
 
 
+def test_gate_fallback(door):
+    log("=== Polaczenie: furtka poza siecia bramofonu (HTTP nieosiagalny -> DTMF) ===")
+    code, _ = api("/api/config", body={"gate_mode": "both", "http_url": "http://10.255.255.1/fcgi/OpenDoor?action=OpenDoor&DoorNum=1",
+                                       "dtmf_method": "both", "dtmf_code": "#", "hangup_after_open_s": 3})
+    check("Furtka zapasowa: zapis ustawien", code == 200)
+    time.sleep(6)
+    try:
+        d = ring(door, "Furtka zapasowa")
+        api("/api/action", body={"name": "answer"})
+        r = door.wait(d, "final", 10)
+        check("Furtka zapasowa: polaczenie odebrane", r == 200, "kod SIP: %s" % r)
+        time.sleep(2)
+        api("/api/action", body={"name": "open"})
+        r = door.wait(d, "info", 12)
+        check("Furtka zapasowa: bramofon dostal kod DTMF (SIP INFO) po nieudanym HTTP", r is True, str(r))
+        ok = wait_for(lambda: "kod otwarcia" in str(status().get("gate")), 6)
+        check("Furtka zapasowa: komunikat o wyslaniu kodu zamiast bledu", ok, str(status().get("gate")))
+        r = door.wait(d, "bye", 12)
+        check("Furtka zapasowa: rozlaczenie po otwarciu", r is True, str(r))
+        if r is not True:
+            door.bye(d)
+        back_to_previous("Furtka zapasowa")
+    finally:
+        api("/api/config", body={"gate_mode": "http", "http_url": "http://%s:%d/fcgi/OpenDoor?action=OpenDoor&DoorNum=1" % (HOST_FROM_EMU, GATE_PORT),
+                                 "dtmf_method": "rfc2833"})
+        time.sleep(6)
+
+
 def test_caller_hangup(door):
     log("=== Polaczenie 4: dzwoniacy rezygnuje ===")
     d = ring(door, "Rezygnacja")
@@ -681,7 +711,7 @@ def main():
     door = Doorphone()
 
     steps = [test_start, test_web, test_provision, test_rtsp, lambda: test_reject(door), lambda: test_answer(door),
-             lambda: test_gate(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_recovery(door)]
+             lambda: test_gate(door), lambda: test_gate_fallback(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_recovery(door)]
     for s in steps:
         try:
             s()

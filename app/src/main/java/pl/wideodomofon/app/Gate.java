@@ -16,10 +16,18 @@ import java.util.regex.Pattern;
 
 /** Otwieranie furtki zapytaniem HTTP (bez autoryzacji, Basic albo Digest). */
 public final class Gate {
+    private static volatile int connectTimeout = 4000;
+
     private Gate() {}
 
     /** Zwraca opis wyniku; rzuca wyjatek przy bledzie. */
     public static String httpOpen() throws Exception {
+        return httpOpen(4000);
+    }
+
+    /** connectTimeoutMs - krotki, gdy w razie niepowodzenia i tak przechodzimy na DTMF. */
+    public static String httpOpen(int connectTimeoutMs) throws Exception {
+        connectTimeout = connectTimeoutMs;
         String url = Cfg.s("http_url");
         String user = Cfg.s("http_user");
         String pass = Cfg.s("http_pass");
@@ -60,7 +68,7 @@ public final class Gate {
     private static Object[] request(String url, String authHeader) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         try {
-            c.setConnectTimeout(4000);
+            c.setConnectTimeout(connectTimeout);
             c.setReadTimeout(6000);
             c.setRequestMethod("GET");
             c.setUseCaches(false);

@@ -413,57 +413,88 @@ public class IntercomService extends Service implements SipManager.Events {
 
     private final Runnable hangupAfterOpen = this::hangup;
 
+    /**
+     * Otwieranie furtki. W trybie "HTTP i DTMF" najpierw HTTP (dziala w sieci bramofonu);
+     * gdy bramofon jest nieosiagalny (np. telefon poza domem), automatycznie kod DTMF przez polaczenie SIP.
+     */
     public void openGate(final String source) {
         main.post(() -> {
             String mode = Cfg.s("gate_mode");
-            boolean useHttp = "http".equals(mode) || "both".equals(mode);
-            boolean useDtmf = "dtmf".equals(mode) || "both".equals(mode);
+            final boolean useHttp = ("http".equals(mode) || "both".equals(mode)) && !Cfg.s("http_url").isEmpty();
+            final boolean useDtmf = "dtmf".equals(mode) || "both".equals(mode);
             L.i("Otwieranie furtki (" + source + "), tryb " + mode);
-            long extra = 0;
-
-            if (useHttp) {
-                if (Cfg.s("http_url").isEmpty()) {
-                    if (!useDtmf) notifyUi("Nie ustawiono adresu URL furtki");
-                } else {
-                    Thread t = new Thread(() -> {
-                        String msg;
-                        try {
-                            msg = "Furtka otwarta (" + Gate.httpOpen() + ")";
-                        } catch (Throwable e) {
-                            msg = "Błąd otwierania furtki: " + e.getMessage();
-                        }
-                        gateResult = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + " " + msg;
-                        L.i(msg);
-                        final String m = msg;
-                        main.post(() -> notifyUi(m));
-                    }, "gate-http");
-                    t.setDaemon(true);
-                    t.start();
+            if (!useHttp) {
+                if (useDtmf) dtmfOpen(null);
+                else notifyUi("Nie ustawiono adresu URL furtki");
+                return;
+            }
+            Thread t = new Thread(() -> {
+                try {
+                    final String msg = "Furtka otwarta (" + Gate.httpOpen(useDtmf ? 2000 : 4000) + ")";
+                    setGateResult(msg);
+                    main.post(() -> {
+                        notifyUi(msg);
+                        scheduleHangupAfterOpen(0);
+                    });
+                } catch (Throwable e) {
+                    final String err = e.getMessage() == null ? e.toString() : e.getMessage();
+                    if (useDtmf) {
+                        L.i("Furtka: HTTP nieosiagalny (" + err + ") - wysylam kod DTMF");
+                        main.post(() -> dtmfOpen("poza siecią bramofonu"));
+                    } else {
+                        final String msg = "Błąd otwierania furtki: " + err;
+                        setGateResult(msg);
+                        main.post(() -> {
+                            notifyUi(msg);
+                            scheduleHangupAfterOpen(0);
+                        });
+                    }
                 }
-            }
-            if (useDtmf) {
-                String code = Cfg.s("dtmf_code");
-                if (state == IN_CALL) {
-                    sip.sendDtmf(code);
-                    if (!useHttp) notifyUi("Wysłano kod otwarcia");
-                } else if (state == RINGING) {
-                    // Kod DTMF mozna wyslac dopiero w zestawionym polaczeniu:
-                    // odbieramy z wyciszonym mikrofonem, wysylamy kod i rozlaczamy.
-                    pendingDtmf = true;
-                    micMuted = true;
-                    extra = 1500;
-                    if (!sip.answer(true)) pendingDtmf = false;
-                } else if (!useHttp) {
-                    notifyUi("Kod DTMF można wysłać tylko podczas połączenia");
-                }
-            }
-
-            int delay = Cfg.i("hangup_after_open_s");
-            if (state != IDLE && (delay > 0 || pendingDtmf)) {
-                main.removeCallbacks(hangupAfterOpen);
-                main.postDelayed(hangupAfterOpen, Math.max(delay, 2) * 1000L + extra);
-            }
+            }, "gate-http");
+            t.setDaemon(true);
+            t.start();
         });
+    }
+
+    private void setGateResult(String msg) {
+        gateResult = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + " " + msg;
+        L.i(msg);
+    }
+
+    /** Kod DTMF przez polaczenie SIP (watek glowny). note - dopisek do komunikatu albo null. */
+    private void dtmfOpen(String note) {
+        String code = Cfg.s("dtmf_code");
+        String suffix = note == null ? "" : " (" + note + ")";
+        long extra = 0;
+        if (state == IN_CALL) {
+            sip.sendDtmf(code);
+            setGateResult("Wysłano kod otwarcia furtki" + suffix);
+            notifyUi("Wysłano kod otwarcia furtki" + suffix);
+        } else if (state == RINGING) {
+            // Kod DTMF mozna wyslac dopiero w zestawionym polaczeniu:
+            // odbieramy z wyciszonym mikrofonem, wysylamy kod i rozlaczamy.
+            pendingDtmf = true;
+            micMuted = true;
+            extra = 1500;
+            if (sip.answer(true)) {
+                setGateResult("Wysyłam kod otwarcia furtki" + suffix);
+                notifyUi("Wysyłam kod otwarcia furtki" + suffix);
+            } else {
+                pendingDtmf = false;
+            }
+        } else {
+            setGateResult("Kod DTMF można wysłać tylko podczas połączenia" + suffix);
+            notifyUi("Furtkę kodem DTMF można otworzyć tylko podczas połączenia" + suffix);
+        }
+        scheduleHangupAfterOpen(extra);
+    }
+
+    private void scheduleHangupAfterOpen(long extra) {
+        int delay = Cfg.i("hangup_after_open_s");
+        if (state != IDLE && (delay > 0 || pendingDtmf)) {
+            main.removeCallbacks(hangupAfterOpen);
+            main.postDelayed(hangupAfterOpen, Math.max(delay, 2) * 1000L + extra);
+        }
     }
 
     private void notifyUi(String msg) {
