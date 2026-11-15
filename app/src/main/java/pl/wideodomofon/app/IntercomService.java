@@ -347,11 +347,77 @@ public class IntercomService extends Service implements SipManager.Events {
         lastCall = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + "  " + who;
         L.i("Polaczenie przychodzace: " + who);
         setVolume(AudioManager.STREAM_RING, Cfg.i("ring_volume"));
+        previewMode = false;
+        stopRingtone();
         showCallUi(false);
+        if (Cfg.b("preview_answer") && Cfg.sipVideo()) {
+            // Podglad podczas dzwonienia: wiekszosc serwerow SIP nie przekazuje obrazu przed odebraniem,
+            // wiec odbieramy po cichu (mikrofon i glosnik wyciszone). Dla uzytkownika telefon nadal "dzwoni",
+            // a rozmowa zaczyna sie dopiero po nacisnieciu "Odbierz".
+            main.postDelayed(() -> {
+                if (state == RINGING && !pendingDtmf && !previewMode && sip.hasCall()) {
+                    previewMode = true;
+                    micMuted = true;
+                    L.i("Podglad: ciche odebranie, zeby obraz byl widoczny podczas dzwonienia");
+                    if (!sip.answer(true)) previewMode = false;
+                }
+            }, 500);
+        }
+    }
+
+    // ---- dzwonek wlasny (w trybie podgladu stos SIP przestaje dzwonic po cichym odebraniu)
+
+    private android.media.MediaPlayer ringPlayer;
+    private volatile boolean previewMode;
+
+    private void startRingtone() {
+        stopRingtone();
+        if (!Cfg.b("ring_enabled")) return;
+        try {
+            android.media.MediaPlayer mp = new android.media.MediaPlayer();
+            mp.setAudioAttributes(new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            mp.setDataSource(this, android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE));
+            mp.setLooping(true);
+            mp.prepare();
+            mp.start();
+            ringPlayer = mp;
+        } catch (Throwable t) {
+            L.e("Dzwonek w trybie podgladu", t);
+        }
+    }
+
+    private void stopRingtone() {
+        android.media.MediaPlayer mp = ringPlayer;
+        ringPlayer = null;
+        if (mp == null) return;
+        try {
+            mp.stop();
+        } catch (Throwable ignored) {
+        }
+        try {
+            mp.release();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public boolean isPreview() {
+        return previewMode;
     }
 
     @Override
     public void onConnected() {
+        if (previewMode && !pendingDtmf) {
+            // Ciche odebranie: obraz juz plynie, ale dla uzytkownika to nadal dzwonienie.
+            sip.setMicMuted(true);
+            sip.setSpeakerMuted(true);
+            startRingtone();
+            L.i("Podglad: obraz podczas dzwonienia, rozmowa zacznie sie po \"Odbierz\"");
+            Ui u = ui;
+            if (u != null) u.refresh();
+            return;
+        }
         state = IN_CALL;
         callStart = SystemClock.uptimeMillis();
         L.i("Rozmowa rozpoczeta");
@@ -369,6 +435,8 @@ public class IntercomService extends Service implements SipManager.Events {
         if (state == IDLE) return;
         state = IDLE;
         pendingDtmf = false;
+        previewMode = false;
+        stopRingtone();
         main.removeCallbacks(hangupAfterOpen);
         L.i("Polaczenie zakonczone: " + reason);
         closeUiSession();
@@ -389,6 +457,21 @@ public class IntercomService extends Service implements SipManager.Events {
                 L.i("UWAGA: brak uprawnienia do mikrofonu - rozmowca nie bedzie nic slyszal");
                 notifyUi("Brak uprawnienia do mikrofonu – nadaj je w menu aplikacji (Uprawnienia)");
             }
+            if (previewMode && sip.isConnected()) {
+                // Polaczenie jest juz zestawione po cichu - wystarczy wlaczyc dzwiek.
+                previewMode = false;
+                stopRingtone();
+                sip.setMicMuted(false);
+                sip.setSpeakerMuted(false);
+                state = IN_CALL;
+                callStart = SystemClock.uptimeMillis();
+                L.i("Rozmowa rozpoczeta (po podgladzie)");
+                setVolume(AudioManager.STREAM_VOICE_CALL, Cfg.i("call_volume"));
+                Ui u = ui;
+                if (u != null) u.refresh();
+                return;
+            }
+            previewMode = false;
             if (!sip.answer(false)) L.i("Nie udalo sie odebrac");
         });
     }
@@ -468,6 +551,12 @@ public class IntercomService extends Service implements SipManager.Events {
         long extra = 0;
         if (state == IN_CALL) {
             sip.sendDtmf(code);
+            setGateResult("Wysłano kod otwarcia furtki" + suffix);
+            notifyUi("Wysłano kod otwarcia furtki" + suffix);
+        } else if (state == RINGING && previewMode && sip.isConnected()) {
+            // Tryb podgladu: polaczenie jest juz zestawione po cichu, kod mozna wyslac od razu.
+            sip.sendDtmf(code);
+            pendingDtmf = true; // wymusza rozlaczenie po otwarciu, jak przy otwarciu bez odbierania
             setGateResult("Wysłano kod otwarcia furtki" + suffix);
             notifyUi("Wysłano kod otwarcia furtki" + suffix);
         } else if (state == RINGING) {

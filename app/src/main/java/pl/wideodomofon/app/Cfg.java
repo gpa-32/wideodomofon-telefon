@@ -31,6 +31,7 @@ public final class Cfg {
             // Obraz
             d.put("video_source", "sip");       // sip | rtsp | jpeg | auto (RTSP w domu, wideo SIP poza domem)
             d.put("early_media", true);
+            d.put("preview_answer", false);     // obraz podczas dzwonienia przez ciche odebranie
             d.put("sip_video_send", true);      // obraz zastepczy otwierajacy NAT dla wideo SIP         // obraz SIP przed odebraniem
             d.put("rtsp_url", "");
             d.put("rtsp_tcp", true);

@@ -616,6 +616,42 @@ def test_gate_fallback(door):
         time.sleep(6)
 
 
+def test_preview(door):
+    log("=== Polaczenie: obraz podczas dzwonienia (ciche odebranie) ===")
+    code, _ = api("/api/config", body={"preview_answer": True, "video_source": "sip"})
+    check("Podglad: zapis ustawien", code == 200)
+    time.sleep(6)
+    try:
+        d = ring(door, "Podglad")
+        r = door.wait(d, "final", 10)
+        check("Podglad: aplikacja sama odebrala po cichu (200 OK)", r == 200, "kod SIP: %s" % r)
+        time.sleep(3)
+        st = str(status().get("call_state"))
+        check("Podglad: dla uzytkownika to nadal dzwonienie", st.startswith("dzwoni"), st)
+        screenshot("12-podglad-dzwoni")
+        api("/api/action", body={"name": "answer"})
+        ok = wait_for(lambda: str(status().get("call_state", "")).startswith("rozmowa"), 8)
+        check("Podglad: po 'Odbierz' zaczyna sie rozmowa", ok, str(status().get("call_state")))
+        api("/api/action", body={"name": "hangup"})
+        r = True if "BYE" in door.seen else door.wait(d, "bye", 10)
+        check("Podglad: rozlaczenie", r is True, str(r))
+        if r is not True:
+            door.bye(d)
+        back_to_previous("Podglad")
+        d = ring(door, "Podglad-odrzucenie")
+        r = door.wait(d, "final", 10)
+        time.sleep(2)
+        api("/api/action", body={"name": "hangup"})
+        r = True if "BYE" in door.seen else door.wait(d, "bye", 10)
+        check("Podglad: 'Odrzuc' konczy polaczenie", r is True, str(r))
+        if r is not True:
+            door.bye(d)
+        back_to_previous("Podglad-odrzucenie")
+    finally:
+        api("/api/config", body={"preview_answer": False, "video_source": "rtsp"})
+        time.sleep(6)
+
+
 def test_caller_hangup(door):
     log("=== Polaczenie 4: dzwoniacy rezygnuje ===")
     d = ring(door, "Rezygnacja")
@@ -714,7 +750,7 @@ def main():
     door = Doorphone()
 
     steps = [test_start, test_web, test_provision, test_rtsp, lambda: test_reject(door), lambda: test_answer(door),
-             lambda: test_gate(door), lambda: test_gate_fallback(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_recovery(door)]
+             lambda: test_gate(door), lambda: test_gate_fallback(door), lambda: test_preview(door), lambda: test_caller_hangup(door), test_menu, lambda: test_phone(door), lambda: test_recovery(door)]
     for s in steps:
         try:
             s()

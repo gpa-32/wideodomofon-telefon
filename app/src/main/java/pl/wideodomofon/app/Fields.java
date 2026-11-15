@@ -72,6 +72,7 @@ final class Fields {
                                 "auto=Automatycznie: RTSP w domu, wideo SIP poza domem", "sip=Wideo w połączeniu SIP",
                                 "rtsp=Strumień RTSP z bramofonu", "jpeg=Zdjęcia JPEG (zapasowe)"),
                         bool("early_media", "Obraz SIP przed odebraniem", ""),
+                        bool("preview_answer", "Obraz podczas dzwonienia (ciche odebranie)", "Aplikacja po cichu odbiera połączenie (mikrofon i głośnik wyciszone), żeby obraz SIP był widoczny już podczas dzwonienia; rozmowa zaczyna się po „Odbierz”. Uwaga: bramofon uzna połączenie za odebrane, więc inne urządzenia w grupie przestaną dzwonić."),
                         bool("sip_video_send", "Wysyłaj obraz zastępczy", "Potrzebne, żeby obraz SIP docierał poza siecią domową (NAT). Kamera telefonu nie jest używana."),
                         text("rtsp_url", "Adres RTSP", "rtsp://uzytkownik:haslo@IP_BRAMOFONU/live/ch00_0"),
                         bool("rtsp_tcp", "RTSP przez TCP", ""),

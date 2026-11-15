@@ -451,6 +451,19 @@ public class SipManager {
         }
     }
 
+    public boolean isConnected() {
+        return call != null && connected;
+    }
+
+    /** Wycisza glosnik rozmowy (podglad obrazu podczas dzwonienia - dzwiek dopiero po "Odbierz"). */
+    public void setSpeakerMuted(boolean muted) {
+        try {
+            if (call != null) call.setSpeakerMuted(muted);
+        } catch (Throwable t) {
+            L.e("SIP: wyciszenie glosnika", t);
+        }
+    }
+
     public void setMicMuted(boolean muted) {
         try {
             if (core != null) core.setMicEnabled(!muted);
