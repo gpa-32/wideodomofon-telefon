@@ -51,6 +51,21 @@ public class SipManager {
 
     private long streamsSince;
 
+    private static boolean remoteSendOnly(Call c) {
+        try {
+            CallParams rp = c.getRemoteParams();
+            return rp != null && rp.getVideoDirection() == MediaDirection.SendOnly;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** Odbior + obraz zastepczy, gdy wolno nam nadawac; sam odbior, gdy druga strona oferuje tylko nadawanie. */
+    private MediaDirection videoDirectionFor(Call c) {
+        if (Cfg.b("sip_video_send") && !remoteSendOnly(c)) return MediaDirection.SendRecv;
+        return MediaDirection.RecvOnly;
+    }
+
     private void requestKeyFrame() {
         try {
             if (call != null && connected && Cfg.sipVideo()) call.sendVfuRequest();
@@ -73,8 +88,11 @@ public class SipManager {
             }
             CallStats vs = call.getVideoStats();
             float down = vs == null ? 0 : vs.getDownloadBandwidth();
-            return String.format(java.util.Locale.US, "w polaczeniu od drugiej strony: %s, uzgodnione: %s%s, odbior %.0f kb/s",
-                    offered ? "tak" : "NIE", agreed ? "tak" : "NIE", codec, down);
+            float up = vs == null ? 0 : vs.getUploadBandwidth();
+            String dir = rp == null ? "?" : String.valueOf(rp.getVideoDirection());
+            return String.format(java.util.Locale.US,
+                    "w polaczeniu od drugiej strony: %s (kierunek %s), uzgodnione: %s%s, odbior %.0f kb/s, wysylanie %.0f kb/s",
+                    offered ? "tak" : "NIE", dir, agreed ? "tak" : "NIE", codec, down, up);
         } catch (Throwable t) {
             return "blad odczytu: " + t;
         }
@@ -95,6 +113,11 @@ public class SipManager {
             if (SystemClock.uptimeMillis() - streamsSince < 6000) return null;
             CallStats vs = call.getVideoStats();
             if (vs == null || vs.getDownloadBandwidth() < 1) {
+                if (remoteSendOnly(call)) {
+                    return "Obraz uzgodniony, ale dane nie docierają. Bramofon oferuje obraz w trybie „tylko nadawanie”, "
+                            + "więc telefon nie może otworzyć drogi przez NAT – potrzebna zmiana po stronie serwera SIP "
+                            + "(przekazywanie mediów / ICE) albo serwer STUN w ustawieniach.";
+                }
                 return "Obraz uzgodniony, ale dane wideo nie docierają – serwer SIP nie przekazuje wideo albo blokuje je sieć (NAT).";
             }
             return null;
@@ -160,7 +183,7 @@ public class SipManager {
                                 CallParams p = c.createCallParams(cl);
                                 if (p != null) {
                                     p.setVideoEnabled(true);
-                                    p.setVideoDirection(MediaDirection.RecvOnly);
+                                    p.setVideoDirection(videoDirectionFor(cl));
                                     cl.acceptEarlyMediaWithParams(p);
                                 }
                             }
@@ -244,7 +267,18 @@ public class SipManager {
 
             // Obraz tylko odbieramy - kamera tabletu nie jest uzywana.
             c.setVideoDisplayEnabled(true);
-            c.setVideoCaptureEnabled(false);
+            // Kamera urzadzenia nie jest uzywana. Poza siecia domowa wysylamy jednak obraz zastepczy
+            // (nieruchoma plansza): bez pakietow wychodzacych serwer SIP nie zna adresu telefonu
+            // za NAT-em i nie ma dokad przekazac obrazu z bramofonu.
+            boolean punch = Cfg.sipVideo() && Cfg.b("sip_video_send");
+            c.setVideoCaptureEnabled(punch);
+            if (punch) {
+                try {
+                    c.setVideoDevice("StaticImage: Static picture");
+                } catch (Throwable t) {
+                    L.e("SIP: obraz zastepczy", t);
+                }
+            }
             VideoActivationPolicy pol = f.createVideoActivationPolicy();
             pol.setAutomaticallyAccept(true);
             pol.setAutomaticallyInitiate(false);
@@ -399,7 +433,7 @@ public class SipManager {
                 return true;
             }
             p.setVideoEnabled(sipVideo);
-            if (sipVideo) p.setVideoDirection(MediaDirection.RecvOnly);
+            if (sipVideo) p.setVideoDirection(videoDirectionFor(call));
             call.acceptWithParams(p);
             return true;
         } catch (Throwable t) {

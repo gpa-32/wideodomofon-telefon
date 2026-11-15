@@ -30,7 +30,8 @@ public final class Cfg {
             d.put("ice_enabled", false);
             // Obraz
             d.put("video_source", "sip");       // sip | rtsp | jpeg | auto (RTSP w domu, wideo SIP poza domem)
-            d.put("early_media", true);         // obraz SIP przed odebraniem
+            d.put("early_media", true);
+            d.put("sip_video_send", true);      // obraz zastepczy otwierajacy NAT dla wideo SIP         // obraz SIP przed odebraniem
             d.put("rtsp_url", "");
             d.put("rtsp_tcp", true);
             d.put("jpeg_url", "");

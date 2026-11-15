@@ -72,6 +72,7 @@ final class Fields {
                                 "auto=Automatycznie: RTSP w domu, wideo SIP poza domem", "sip=Wideo w połączeniu SIP",
                                 "rtsp=Strumień RTSP z bramofonu", "jpeg=Zdjęcia JPEG (zapasowe)"),
                         bool("early_media", "Obraz SIP przed odebraniem", ""),
+                        bool("sip_video_send", "Wysyłaj obraz zastępczy", "Potrzebne, żeby obraz SIP docierał poza siecią domową (NAT). Kamera telefonu nie jest używana."),
                         text("rtsp_url", "Adres RTSP", "rtsp://uzytkownik:haslo@IP_BRAMOFONU/live/ch00_0"),
                         bool("rtsp_tcp", "RTSP przez TCP", ""),
                         text("jpeg_url", "Adres zdjęcia JPEG", "http://IP_BRAMOFONU:8080/picture.jpg")),
