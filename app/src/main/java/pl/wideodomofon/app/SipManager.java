@@ -12,6 +12,7 @@ import org.linphone.core.AudioDevice;
 import org.linphone.core.AuthInfo;
 import org.linphone.core.Call;
 import org.linphone.core.CallParams;
+import org.linphone.core.CallStats;
 import org.linphone.core.Core;
 import org.linphone.core.CoreListenerStub;
 import org.linphone.core.Factory;
@@ -46,6 +47,30 @@ public class SipManager {
     private long lastStartTry;
     private Object videoWindow;
     public volatile String regState = "-";
+    private int statsCount;
+
+    /** Pomiar dzwieku w trakcie rozmowy - pokazuje w dzienniku, czy pakiety ida w obie strony. */
+    private final Runnable audioStats = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                if (call == null || core == null || !connected) return;
+                CallStats st = call.getAudioStats();
+                boolean perm = ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                if (st != null) {
+                    float down = st.getDownloadBandwidth(), up = st.getUploadBandwidth();
+                    L.i(String.format(java.util.Locale.US,
+                            "Audio: odbior %.0f kb/s, wysylanie %.0f kb/s, mikrofon %s, uprawnienie mikrofonu %s%s",
+                            down, up, core.isMicEnabled() ? "wlaczony" : "wyciszony", perm ? "jest" : "BRAK",
+                            down < 1 ? "  <- brak pakietow dzwieku od bramofonu (siec / zapora miedzy podsieciami)" : ""));
+                }
+                if (++statsCount < 6) main.postDelayed(this, 4000);
+            } catch (Throwable t) {
+                L.e("SIP: pomiar dzwieku", t);
+            }
+        }
+    };
 
     public SipManager(Context ctx, Events events) {
         this.ctx = ctx.getApplicationContext();
@@ -90,6 +115,9 @@ public class SipManager {
                 if (cl == call && !connected && state == Call.State.StreamsRunning) {
                     connected = true;
                     routeToSpeaker();
+                    statsCount = 0;
+                    main.removeCallbacks(audioStats);
+                    main.postDelayed(audioStats, 3000);
                     events.onConnected();
                 }
             } else if (state == Call.State.End || state == Call.State.Error
@@ -97,6 +125,7 @@ public class SipManager {
                 if (cl == call) {
                     call = null;
                     connected = false;
+                    main.removeCallbacks(audioStats);
                     try {
                         c.setMicEnabled(true);
                     } catch (Throwable ignored) {

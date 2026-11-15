@@ -384,6 +384,11 @@ public class IntercomService extends Service implements SipManager.Events {
         main.post(() -> {
             if (state != RINGING) return;
             micMuted = false;
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                L.i("UWAGA: brak uprawnienia do mikrofonu - rozmowca nie bedzie nic slyszal");
+                notifyUi("Brak uprawnienia do mikrofonu – nadaj je w menu aplikacji (Uprawnienia)");
+            }
             if (!sip.answer(false)) L.i("Nie udalo sie odebrac");
         });
     }
