@@ -205,8 +205,8 @@ public class SipManager {
             }
 
             String dm = Cfg.s("dtmf_method");
-            c.setUseRfc2833ForDtmf(!"info".equals(dm));
-            c.setUseInfoForDtmf("info".equals(dm) || "both".equals(dm));
+            c.setUseRfc2833ForDtmf(true);
+            c.setUseInfoForDtmf(false); // INFO wysylamy sami w sendDtmf()
 
             // Przechodzenie przez NAT (siec komorkowa, obce Wi-Fi): STUN i opcjonalnie ICE.
             org.linphone.core.NatPolicy nat = null;
@@ -352,15 +352,42 @@ public class SipManager {
         }
     }
 
-    public void sendDtmf(String code) {
-        try {
-            if (call != null && code != null && !code.isEmpty()) {
-                call.sendDtmfs(code);
-                L.i("SIP: wyslano DTMF " + code);
-            }
-        } catch (Throwable t) {
-            L.e("SIP: DTMF", t);
+    /**
+     * Wysyla kod DTMF znak po znaku. RFC2833 idzie kanalem dzwieku (RTP), SIP INFO - kanalem
+     * sygnalizacji przez serwer, wiec dociera takze wtedy, gdy dzwiek nie przechodzi.
+     * Wiadomosc INFO budujemy sami, zeby tryb "RFC2833 + SIP INFO" na pewno wyslal oba.
+     */
+    public void sendDtmf(final String code) {
+        if (call == null || code == null || code.isEmpty()) return;
+        final Call target = call;
+        String dm = Cfg.s("dtmf_method");
+        final boolean rfc = !"info".equals(dm);
+        final boolean info = "info".equals(dm) || "both".equals(dm);
+        for (int i = 0; i < code.length(); i++) {
+            final char ch = code.charAt(i);
+            main.postDelayed(() -> {
+                if (call != target || core == null) return;
+                try {
+                    if (rfc) target.sendDtmf(ch);
+                } catch (Throwable t) {
+                    L.e("SIP: DTMF RFC2833", t);
+                }
+                try {
+                    if (info) {
+                        org.linphone.core.Content ct = Factory.instance().createContent();
+                        ct.setType("application");
+                        ct.setSubtype("dtmf-relay");
+                        ct.setUtf8Text("Signal=" + ch + "\r\nDuration=250\r\n");
+                        org.linphone.core.InfoMessage im = core.createInfoMessage();
+                        im.setContent(ct);
+                        target.sendInfoMessage(im);
+                    }
+                } catch (Throwable t) {
+                    L.e("SIP: DTMF INFO", t);
+                }
+            }, i * 400L);
         }
+        L.i("SIP: wyslano DTMF " + code + " (" + (rfc && info ? "RFC2833 + SIP INFO" : info ? "SIP INFO" : "RFC2833") + ")");
     }
 
     public void setVideoWindow(Object window) {

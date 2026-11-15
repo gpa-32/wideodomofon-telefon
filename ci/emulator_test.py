@@ -230,6 +230,7 @@ class Doorphone:
         self.srv.listen(5)
         threading.Thread(target=self._accept, daemon=True).start()
         self.conn = None
+        self.seen = []
 
     def _accept(self):
         while True:
@@ -273,6 +274,7 @@ class Doorphone:
         """Wysyla INVITE; zwraca slownik z danymi dialogu."""
         while not self.q.empty():
             self.q.get()
+        self.seen = []
         c = socket.create_connection(("127.0.0.1", 5060), timeout=10)
         c.settimeout(None)
         self.conn = c
@@ -347,6 +349,7 @@ class Doorphone:
                         return -m.code
             else:
                 log("SIP <- %s" % m.start)
+                self.seen.append(m.method)
                 if m.method != "ACK":
                     self._reply_ok(c, m)
                 if m.method == "BYE" and want == "bye":
@@ -602,7 +605,7 @@ def test_gate_fallback(door):
         check("Furtka zapasowa: bramofon dostal kod DTMF (SIP INFO) po nieudanym HTTP", r is True, str(r))
         ok = wait_for(lambda: "kod otwarcia" in str(status().get("gate")), 6)
         check("Furtka zapasowa: komunikat o wyslaniu kodu zamiast bledu", ok, str(status().get("gate")))
-        r = door.wait(d, "bye", 12)
+        r = True if "BYE" in door.seen else door.wait(d, "bye", 12)
         check("Furtka zapasowa: rozlaczenie po otwarciu", r is True, str(r))
         if r is not True:
             door.bye(d)
