@@ -180,7 +180,11 @@ class ProvHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         prov_hits.append(("GET", self.path, ""))
         if self.path == "/p/tokenurzadzenia123.json":
-            self._send(200, self._account("k9-202"))
+            acc = self._account("k9-202")
+            acc["preview"] = True
+            acc["answer_dtmf"] = "*1"
+            acc["doors"] = [{"name": "Wejscie", "relays": [{"name": "Furtka", "dtmf": "1"}, {"name": "Brama", "dtmf": "3"}]}]
+            self._send(200, acc)
         else:
             self._send(404, {"detail": "Not Found"})
 
@@ -488,11 +492,20 @@ def test_provision():
     _, body = api("/api/config")
     check("Serwer: link urzadzenia (.xml) pobiera konto w JSON", r.get("ok") is True and '"k9-202"' in body
           and ("GET", "/p/tokenurzadzenia123.json", "") in prov_hits, str(r))
+    try:
+        cfg = json.loads(body)
+    except Exception:  # noqa
+        cfg = {}
+    check("Serwer: podglad grupowy, kod odebrania i kody przekaznikow z pliku konfiguracyjnego",
+          cfg.get("preview_answer") is True and cfg.get("answer_dtmf") == "*1" and cfg.get("dtmf_code") == "1"
+          and cfg.get("dtmf_code2") == "3" and cfg.get("gate2_label") == "Brama" and cfg.get("dtmf_method") == "rfc2833",
+          json.dumps({k: cfg.get(k) for k in ("preview_answer", "answer_dtmf", "dtmf_code", "dtmf_code2", "gate2_label", "dtmf_method")}))
     time.sleep(4)
     st = status()
     check("Serwer: SIP probuje rejestracji po pobraniu konta", "bez rejestracji" not in str(st.get("sip")), str(st.get("sip")))
     # powrot do pracy bez serwera - dalsze testy dzwonia bezposrednio po IP
-    code, _ = api("/api/config", body={"sip_enabled": False, "sip_server": "", "sip_user": "", "sip_pass": ""})
+    code, _ = api("/api/config", body={"sip_enabled": False, "sip_server": "", "sip_user": "", "sip_pass": "",
+                                       "preview_answer": False, "answer_dtmf": "", "dtmf_code": "#", "dtmf_code2": ""})
     check("Serwer: wylaczenie rejestracji", code == 200)
     time.sleep(6)
 

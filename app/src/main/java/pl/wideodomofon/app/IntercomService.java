@@ -278,6 +278,7 @@ public class IntercomService extends Service implements SipManager.Events {
                     }
                 }
                 if (tick % 24 == 0) BootReceiver.scheduleKeepAlive(IntercomService.this, 5 * 60 * 1000L);
+                if (tick % 360 == 3 && state == IDLE) refreshFromServer(); // co 30 min i chwile po starcie
             } catch (Throwable t) {
                 L.e("Watchdog: blad w tetnie", t);
             }
@@ -440,6 +441,8 @@ public class IntercomService extends Service implements SipManager.Events {
         stopRingtone();
         showCallUi(false);
         pendingAnswerCode = false;
+        pendingDtmfCode = null;
+        refreshFromServer(); // ustawienia grupy mogly sie zmienic w panelu serwera
         if (Cfg.b("preview_answer") && Cfg.sipVideo()) {
             // Podglad podczas dzwonienia: serwer SIP nie przekazuje obrazu przed odebraniem, wiec poza siecia
             // bramofonu odbieramy po cichu (mikrofon i glosnik wyciszone). Dla uzytkownika telefon nadal "dzwoni".
@@ -467,6 +470,7 @@ public class IntercomService extends Service implements SipManager.Events {
     }
 
     private boolean pendingAnswerCode;
+    private String pendingDtmfCode;
 
     /** Kod DTMF "odebralem" - dla serwera z grupa dzwonienia, w ktorej wszystkie urzadzenia maja podglad. */
     private void sendAnswerCode() {
@@ -537,7 +541,9 @@ public class IntercomService extends Service implements SipManager.Events {
         setVolume(AudioManager.STREAM_VOICE_CALL, Cfg.i("call_volume"));
         if (pendingDtmf) {
             pendingDtmf = false;
-            main.postDelayed(() -> sip.sendDtmf(Cfg.s("dtmf_code")), 700);
+            final String c = pendingDtmfCode == null ? Cfg.s("dtmf_code") : pendingDtmfCode;
+            pendingDtmfCode = null;
+            main.postDelayed(() -> sip.sendDtmf(c), 700);
         }
         if (pendingAnswerCode) {
             pendingAnswerCode = false;
@@ -668,6 +674,29 @@ public class IntercomService extends Service implements SipManager.Events {
         });
     }
 
+    /** Drugi przekaznik (brama): tylko kodem DTMF przez polaczenie. */
+    public void openGate2(final String source) {
+        main.post(() -> {
+            String code = Cfg.s("dtmf_code2");
+            if (code.isEmpty()) return;
+            L.i("Otwieranie: " + Cfg.s("gate2_label") + " (" + source + ")");
+            dtmfOpen(Cfg.s("gate2_label"), code);
+        });
+    }
+
+    /** Odswieza z serwera ustawienia grupy (podglad, kody) - w tle, bez przerywania pracy. */
+    private void refreshFromServer() {
+        Thread t = new Thread(() -> {
+            if (Provision.refresh(getApplicationContext())) {
+                main.post(() -> {
+                    if (state == IDLE) sip.restart();
+                });
+            }
+        }, "server-refresh");
+        t.setDaemon(true);
+        t.start();
+    }
+
     private void setGateResult(String msg) {
         gateResult = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + " " + msg;
         L.i(msg);
@@ -675,7 +704,10 @@ public class IntercomService extends Service implements SipManager.Events {
 
     /** Kod DTMF przez polaczenie SIP (watek glowny). note - dopisek do komunikatu albo null. */
     private void dtmfOpen(String note) {
-        String code = Cfg.s("dtmf_code");
+        dtmfOpen(note, Cfg.s("dtmf_code"));
+    }
+
+    private void dtmfOpen(String note, final String code) {
         String suffix = note == null ? "" : " (" + note + ")";
         long extra = 0;
         if (state == IN_CALL) {
@@ -692,6 +724,7 @@ public class IntercomService extends Service implements SipManager.Events {
             // Kod DTMF mozna wyslac dopiero w zestawionym polaczeniu:
             // odbieramy z wyciszonym mikrofonem, wysylamy kod i rozlaczamy.
             pendingDtmf = true;
+            pendingDtmfCode = code;
             micMuted = true;
             extra = 1500;
             if (sip.answer(true)) {

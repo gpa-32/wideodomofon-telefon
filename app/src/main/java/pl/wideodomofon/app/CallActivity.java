@@ -31,7 +31,7 @@ public class CallActivity extends Activity implements IntercomService.Ui {
     private TextureView video;
     private VLCVideoLayout rtspView;
     private TextView title, info, videoStatus;
-    private ImageView btnAnswer, btnOpen, btnHang, btnMute;
+    private ImageView btnAnswer, btnOpen, btnOpen2, btnHang, btnMute;
     private RtspPlayer rtsp;
     private SnapshotPlayer jpeg;
     private android.widget.ImageView jpegView;
@@ -282,6 +282,14 @@ public class CallActivity extends Activity implements IntercomService.Ui {
         if (svc != null) svc.answer();
     }
 
+    private void onOpen2() {
+        IntercomService svc = IntercomService.instance;
+        if (svc != null) {
+            info.setText("Otwieranie: " + Cfg.s("gate2_label") + "…");
+            svc.openGate2("ekran urządzenia");
+        }
+    }
+
     private void onOpen() {
         IntercomService svc = IntercomService.instance;
         if (svc != null) {
@@ -346,7 +354,9 @@ public class CallActivity extends Activity implements IntercomService.Ui {
         b.setOnClickListener(l);
         int size = dp(phone ? 72 : 104);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
-        lp.setMargins(dp(phone ? 12 : 28), 0, dp(phone ? 12 : 28), 0);
+        boolean four = !Cfg.s("dtmf_code2").isEmpty(); // cztery przyciski w rzedzie - ciasniej na telefonie
+        int margin = dp(phone ? (four ? 7 : 12) : 28);
+        lp.setMargins(margin, 0, margin, 0);
         b.setLayoutParams(lp);
         return b;
     }
@@ -404,6 +414,10 @@ public class CallActivity extends Activity implements IntercomService.Ui {
         btnHang = button(R.drawable.ic_call_end, "Odrzuć", 0xFFC62828, v -> onHang());
         bar.addView(btnAnswer);
         bar.addView(btnOpen);
+        if (!Cfg.s("dtmf_code2").isEmpty()) {
+            btnOpen2 = button(R.drawable.ic_gate2, "Otwórz: " + Cfg.s("gate2_label"), 0xFF00796B, v -> onOpen2());
+            bar.addView(btnOpen2);
+        }
         bar.addView(btnMute);
         bar.addView(btnHang);
         root.addView(bar, new FrameLayout.LayoutParams(

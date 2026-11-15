@@ -103,6 +103,9 @@ public class WebServer extends NanoHTTPD {
                         case "open":
                             svc.openGate("panel www");
                             break;
+                        case "open2":
+                            svc.openGate2("panel www");
+                            break;
                         case "answer":
                             svc.answer();
                             break;

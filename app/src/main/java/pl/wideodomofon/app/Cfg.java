@@ -40,6 +40,8 @@ public final class Cfg {
             // Furtka
             d.put("gate_mode", "both");         // dtmf | http | both
             d.put("dtmf_code", "#");
+            d.put("dtmf_code2", "");            // drugi przekaznik (brama); pusty = bez drugiego przycisku
+            d.put("gate2_label", "Brama");
             d.put("dtmf_method", "rfc2833");    // rfc2833 | info | both
             d.put("http_url", "");
             d.put("http_user", "");

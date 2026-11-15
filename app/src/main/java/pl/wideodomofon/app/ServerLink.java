@@ -36,6 +36,52 @@ public final class ServerLink {
         public String extension = "";
         public String group = "";
         public boolean paired;
+        /** Grupa z podgladem (konferencja na serwerze); null = serwer nie podal. */
+        public Boolean preview;
+        /** Kod DTMF wysylany po "Odbierz"; null = serwer nie podal. */
+        public String answerDtmf;
+        /** Przekazniki bramofonu: {nazwa, kod DTMF}, w kolejnosci z serwera. */
+        public final java.util.List<String[]> relays = new java.util.ArrayList<>();
+        /** Staly link do pliku konfiguracyjnego urzadzenia (do odswiezania), jesli znany. */
+        public String configLink;
+    }
+
+    private static final Pattern DEVICE_LINK = Pattern.compile(
+            "^https?://[A-Za-z0-9.\\-]+(?::\\d{1,5})?/p/[A-Za-z0-9_\\-]{8,}(?:\\.xml|\\.json)?$");
+
+    /** Wyszukuje w odpowiedzi serwera pola dodatkowe niezaleznie od tego, w ktorym miejscu JSON-a sa. */
+    private static void walk(Object node, Account a, int depth) {
+        if (node == null || depth > 8) return;
+        if (node instanceof JSONObject) {
+            JSONObject o = (JSONObject) node;
+            if (o.has("preview") && a.preview == null) {
+                Object v = o.opt("preview");
+                a.preview = Boolean.TRUE.equals(v) || "1".equals(String.valueOf(v)) || "true".equalsIgnoreCase(String.valueOf(v));
+            }
+            if (o.has("answer_dtmf") && a.answerDtmf == null) a.answerDtmf = o.optString("answer_dtmf", "").trim();
+            String code = null;
+            for (String k : new String[]{"dtmf", "dtmf_code", "code", "digit"}) {
+                Object v = o.opt(k);
+                if (v != null && String.valueOf(v).trim().matches("[0-9*]{1,6}")) {
+                    code = String.valueOf(v).trim();
+                    break;
+                }
+            }
+            if (code != null && a.relays.size() < 4) {
+                String name = o.optString("name", o.optString("label", o.optString("title", ""))).trim();
+                boolean dup = false;
+                for (String[] r : a.relays) if (r[1].equals(code)) dup = true;
+                if (!dup) a.relays.add(new String[]{name, code});
+            }
+            java.util.Iterator<String> it = o.keys();
+            while (it.hasNext()) walk(o.opt(it.next()), a, depth + 1);
+        } else if (node instanceof org.json.JSONArray) {
+            org.json.JSONArray arr = (org.json.JSONArray) node;
+            for (int i = 0; i < arr.length(); i++) walk(arr.opt(i), a, depth + 1);
+        } else if (node instanceof String) {
+            String str = ((String) node).trim();
+            if (a.configLink == null && DEVICE_LINK.matcher(str).matches()) a.configLink = str;
+        }
     }
 
     public static final class LinkException extends Exception {
@@ -84,6 +130,11 @@ public final class ServerLink {
             JSONObject g = o.optJSONObject("group");
             if (g != null) a.group = (g.optString("number", "") + " " + g.optString("name", "")).trim();
             a.paired = pair;
+            try {
+                walk(o, a, 0);
+            } catch (Throwable ignored) {
+            }
+            if (!pair) a.configLink = scheme + "://" + host + "/p/" + m.group(4) + ".json";
             if (a.server.isEmpty() || a.user.isEmpty() || a.port < 1 || a.port > 65535
                     || !a.server.matches("[A-Za-z0-9.\\-]+")) {
                 throw new LinkException("Serwer zwrócił niepełne dane konta.");

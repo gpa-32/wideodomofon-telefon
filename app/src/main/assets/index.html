@@ -104,7 +104,9 @@ const GROUPS = [
     ["http_url","text","Adres URL otwarcia","Akuvox: http://IP_BRAMOFONU/fcgi/OpenDoor?action=OpenDoor&DoorNum=1"],
     ["http_user","text","Użytkownik HTTP","Jak w bramofonie: Access Control → Relay → Open Relay via HTTP."],
     ["http_pass","password","Hasło HTTP",""],
-    ["dtmf_code","text","Kod DTMF","Akuvox domyślnie: #"],
+    ["dtmf_code","text","Kod DTMF furtki","Akuvox domyślnie: #. Z serwerem Domofon SIP: cyfra, np. 1."],
+    ["dtmf_code2","text","Kod DTMF bramy (drugi przycisk)","Kod DTMF drugiego przekaźnika (np. brama). Puste = bez drugiego przycisku na ekranie rozmowy."],
+    ["gate2_label","text","Nazwa drugiego przycisku",""],
     ["dtmf_method","select:rfc2833=RFC2833,info=SIP INFO,both=RFC2833 + SIP INFO","Sposób wysyłania DTMF","Musi być taki sam jak w ustawieniach konta bramofonu."],
     ["hangup_after_open_s","number","Rozłącz po otwarciu po [s]","0 = nie rozłączaj automatycznie. Po rozłączeniu wraca poprzednia aplikacja."]
   ]],
