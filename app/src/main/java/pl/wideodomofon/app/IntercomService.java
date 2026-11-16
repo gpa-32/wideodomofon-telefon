@@ -859,16 +859,45 @@ public class IntercomService extends Service implements SipManager.Events {
         // (albo przez root). Bez niego - i zawsze przy wygaszonym ekranie - jedyna droga jest
         // powiadomienie pelnoekranowe: przy wygaszonym ekranie system sam otwiera z niego ekran rozmowy.
         final boolean direct = overlayAllowed() || rootOk;
-        if (!interactive) wakeScreen();
+        boolean fsi = true;
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                fsi = ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).canUseFullScreenIntent();
+            }
+        } catch (Throwable ignored) {
+        }
+        L.i("Ekran: otwieram ekran rozmowy (ekran " + (interactive ? "wlaczony" : "WYGASZONY")
+                + ", wyswietlanie nad aplikacjami: " + (direct ? "tak" : "NIE")
+                + ", zgoda na pelny ekran: " + (fsi ? "tak" : "NIE") + ")");
+        if (!test && (!direct || !interactive)) {
+            // Najpierw powiadomienie pelnoekranowe, dopiero potem wybudzenie: czesc telefonow otwiera
+            // z niego ekran rozmowy tylko wtedy, gdy w chwili zgloszenia ekran jest jeszcze wygaszony.
+            postCallNotification(i);
+        }
         try {
             startActivity(i);
         } catch (Throwable t) {
             L.e("Start ekranu rozmowy", t);
         }
+        if (!interactive) {
+            main.postDelayed(() -> {
+                if (test || state != IDLE) wakeScreen();
+            }, 700);
+            // Jesli po wybudzeniu ekran rozmowy nadal nie jest na wierzchu, probujemy jeszcze raz.
+            main.postDelayed(() -> {
+                if (!CallActivity.shown && (test || state != IDLE)) {
+                    L.i("Ekran: po wybudzeniu ekran rozmowy nadal niewidoczny - ponawiam");
+                    try {
+                        startActivity(i);
+                    } catch (Throwable ignored) {
+                    }
+                    if (!test) postCallNotification(i);
+                }
+            }, 2500);
+        }
         if (!test) {
             if (!direct || !interactive) {
                 if (!direct) L.i("Ekran: brak uprawnienia \"wyswietlanie nad aplikacjami\" - ekran rozmowy tylko przez powiadomienie");
-                postCallNotification(i);
             } else {
                 // Rezerwa, gdy ekran rozmowy sam sie nie pojawil (inaczej baner zaslanialby obraz z kamery).
                 main.postDelayed(() -> {

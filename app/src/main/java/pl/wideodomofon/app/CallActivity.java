@@ -46,7 +46,15 @@ public class CallActivity extends Activity implements IntercomService.Ui {
                 | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 27) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            }
+        } catch (Throwable ignored) {
+        }
         test = getIntent().getBooleanExtra("test", false);
+        L.i("Ekran rozmowy: utworzony");
         buildUi();
 
         IntercomService svc = IntercomService.instance;
@@ -230,6 +238,7 @@ public class CallActivity extends Activity implements IntercomService.Ui {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!shown) L.i("Ekran rozmowy: widoczny");
         shown = true;
         hideSystemBars();
         IntercomService svc = IntercomService.instance;
