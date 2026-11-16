@@ -814,37 +814,67 @@ public class IntercomService extends Service implements SipManager.Events {
         return first;
     }
 
+    private void postCallNotification(Intent i) {
+        try {
+            PendingIntent pi = PendingIntent.getActivity(this, 2, i,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            Notification n = new Notification.Builder(this, CH_CALL)
+                    .setSmallIcon(android.R.drawable.sym_call_incoming)
+                    .setContentTitle("Ktoś dzwoni do furtki")
+                    .setContentText(caller)
+                    .setCategory(Notification.CATEGORY_CALL)
+                    .setOngoing(true)
+                    .setContentIntent(pi)
+                    .setFullScreenIntent(pi, true)
+                    .build();
+            ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(NOTIF_CALL, n);
+        } catch (Throwable t) {
+            L.e("Powiadomienie o polaczeniu", t);
+        }
+    }
+
+    /** Wybudza wygaszony ekran bez root (telefon): krotka blokada jasnego ekranu. */
+    @SuppressWarnings("deprecation")
+    private void wakeScreen() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                    | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "wideodomofon:call-screen");
+            wl.acquire(15000);
+        } catch (Throwable t) {
+            L.e("Wybudzenie ekranu", t);
+        }
+    }
+
     private void launchCallActivity(final boolean test) {
         final Intent i = new Intent(this, CallActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION)
                 .putExtra("test", test);
+        boolean interactive = true;
+        try {
+            interactive = ((PowerManager) getSystemService(Context.POWER_SERVICE)).isInteractive();
+        } catch (Throwable ignored) {
+        }
+        // System pozwala usludze w tle otworzyc ekran tylko z uprawnieniem "wyswietlanie nad aplikacjami"
+        // (albo przez root). Bez niego - i zawsze przy wygaszonym ekranie - jedyna droga jest
+        // powiadomienie pelnoekranowe: przy wygaszonym ekranie system sam otwiera z niego ekran rozmowy.
+        final boolean direct = overlayAllowed() || rootOk;
+        if (!interactive) wakeScreen();
         try {
             startActivity(i);
         } catch (Throwable t) {
             L.e("Start ekranu rozmowy", t);
         }
-        // Powiadomienie pelnoekranowe tylko jako rezerwa, gdy ekran rozmowy sam sie nie pojawil
-        // (inaczej baner powiadomienia zaslanialby obraz z kamery).
         if (!test) {
-            main.postDelayed(() -> {
-                if (CallActivity.shown || state == IDLE) return;
-                try {
-                    PendingIntent pi = PendingIntent.getActivity(this, 2, i,
-                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                    Notification n = new Notification.Builder(this, CH_CALL)
-                            .setSmallIcon(android.R.drawable.sym_call_incoming)
-                            .setContentTitle("Ktoś dzwoni do furtki")
-                            .setContentText(caller)
-                            .setCategory(Notification.CATEGORY_CALL)
-                            .setOngoing(true)
-                            .setContentIntent(pi)
-                            .setFullScreenIntent(pi, true)
-                            .build();
-                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(NOTIF_CALL, n);
-                } catch (Throwable t) {
-                    L.e("Powiadomienie o polaczeniu", t);
-                }
-            }, 1200);
+            if (!direct || !interactive) {
+                if (!direct) L.i("Ekran: brak uprawnienia \"wyswietlanie nad aplikacjami\" - ekran rozmowy tylko przez powiadomienie");
+                postCallNotification(i);
+            } else {
+                // Rezerwa, gdy ekran rozmowy sam sie nie pojawil (inaczej baner zaslanialby obraz z kamery).
+                main.postDelayed(() -> {
+                    if (!CallActivity.shown && state != IDLE) postCallNotification(i);
+                }, 1200);
+            }
         }
         // Rezerwa: jesli system zablokowal start ekranu z tla, wymus go przez root.
         main.postDelayed(() -> {

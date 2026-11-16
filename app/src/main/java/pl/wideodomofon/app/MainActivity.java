@@ -245,6 +245,16 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Android 14+: osobna zgoda na otwieranie ekranu rozmowy przy wygaszonym ekranie. */
+    private boolean fullScreenOk() {
+        try {
+            if (Build.VERSION.SDK_INT < 34) return true;
+            return ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).canUseFullScreenIntent();
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
     /** Kazde nacisniecie prosi o kolejne brakujace uprawnienie. */
     private void requestNextPermission() {
         try {
@@ -258,6 +268,8 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg));
             } else if (!batteryOk()) {
                 startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg));
+            } else if (!fullScreenOk()) {
+                startActivity(new Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT", pkg));
             } else {
                 toast("Wszystkie uprawnienia są nadane");
             }
@@ -295,7 +307,8 @@ public class MainActivity extends Activity {
             }
             status.setText(sb.toString());
 
-            int missing = (micOk() ? 0 : 1) + (notifOk() ? 0 : 1) + (overlayOk() ? 0 : 1) + (batteryOk() ? 0 : 1);
+            int missing = (micOk() ? 0 : 1) + (notifOk() ? 0 : 1) + (overlayOk() ? 0 : 1) + (batteryOk() ? 0 : 1)
+                    + (fullScreenOk() ? 0 : 1);
             StringBuilder p = new StringBuilder("Uprawnienia: ");
             if (missing == 0) {
                 p.append("wszystkie nadane");
@@ -305,6 +318,7 @@ public class MainActivity extends Activity {
                 if (!notifOk()) p.append(" · powiadomienia");
                 if (!overlayOk()) p.append(" · wyświetlanie nad aplikacjami");
                 if (!batteryOk()) p.append(" · praca w tle bez oszczędzania baterii");
+                if (!fullScreenOk()) p.append(" · ekran rozmowy przy wygaszonym ekranie");
                 p.append("  (dotknij, aby nadać)");
             }
             permButton.setText(p.toString());
