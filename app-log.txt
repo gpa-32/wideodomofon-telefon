@@ -1,0 +1,210 @@
+11-16 01:06:25 === Start procesu, wersja 1.1.15 ===
+11-16 01:06:25 Usluga: start
+11-16 01:06:25 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:25 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:06:25 Panel www: http://10.0.2.16:8080
+11-16 01:06:26 Root: niedostepny (uprawnienia trzeba nadac recznie w aplikacji)
+11-16 01:06:42 Zapisano nowe ustawienia
+11-16 01:06:42 SIP: restart
+11-16 01:06:42 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:42 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:06:47 Serwer: Nieprawidłowy link. Wklej link urządzenia (…/p/….xml) albo link parowania (…/api/pair/…) z panelu serwera.
+11-16 01:06:47 Serwer: Link musi zaczynać się od https:// (dane logowania nie mogą iść przez internet bez szyfrowania).
+11-16 01:06:47 Serwer: Parowanie nie jest aktywne. W panelu serwera otwórz grupę i kliknij „Rozpocznij parowanie”.
+11-16 01:06:47 Serwer: pobrano konto k9-201@10.0.2.2:5099 (udp)
+11-16 01:06:47 Serwer: pobrano konto k9-202@10.0.2.2:5099 (udp) Podgląd grupowy: włączony, kod odebrania *1. Furtka: kod 1, Brama: kod 3.
+11-16 01:06:48 Zapisano nowe ustawienia
+11-16 01:06:48 SIP: restart
+11-16 01:06:48 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:48 SIP: uruchomiono, port 5060, konto k9-202@10.0.2.2:5099
+11-16 01:06:48 Zapisano nowe ustawienia
+11-16 01:06:48 SIP: restart
+11-16 01:06:48 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:48 SIP: uruchomiono, port 5060, konto k9-202@10.0.2.2:5099
+11-16 01:06:48 SIP: rejestracja Progress (Registration in progress)
+11-16 01:06:52 Zapisano nowe ustawienia
+11-16 01:06:52 SIP: restart
+11-16 01:06:52 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:52 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:06:58 Zapisano nowe ustawienia
+11-16 01:06:58 SIP: restart
+11-16 01:06:58 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:06:58 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:07:03 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:07:04 Ekran rozmowy: utworzony
+11-16 01:07:04 Ekran: podglad RTSP
+11-16 01:07:04 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:07:04 Ekran rozmowy: widoczny
+11-16 01:07:06 RTSP: obraz odebrany (TCP)
+11-16 01:07:21 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:07:21 Polaczenie przychodzace: Furtka test
+11-16 01:07:21 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:07:21 Ekran rozmowy: utworzony
+11-16 01:07:21 Ekran: podglad RTSP
+11-16 01:07:21 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:07:21 Ekran rozmowy: widoczny
+11-16 01:07:22 RTSP: obraz odebrany (TCP)
+11-16 01:07:29 SIP: stan polaczenia End (Call terminated)
+11-16 01:07:29 Polaczenie zakonczone: Call terminated
+11-16 01:07:29 SIP: stan polaczenia Released (Call released)
+11-16 01:07:34 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:07:34 Polaczenie przychodzace: Furtka test
+11-16 01:07:34 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:07:35 Ekran rozmowy: utworzony
+11-16 01:07:35 Ekran: podglad RTSP
+11-16 01:07:35 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:07:35 Ekran rozmowy: widoczny
+11-16 01:07:36 SIP: stan polaczenia Connected (Connected)
+11-16 01:07:36 SIP: stan polaczenia StreamsRunning (Connected (streams running))
+11-16 01:07:36 Rozmowa rozpoczeta
+11-16 01:07:36 RTSP: obraz odebrany (TCP)
+11-16 01:07:37 Odebranie: brak kodu odebrania (ustawienia SIP) - serwer nie rozlaczy pozostalych urzadzen
+11-16 01:07:39 Audio: odbior 0 kb/s, wysylanie 79 kb/s, mikrofon wlaczony, uprawnienie mikrofonu jest  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)
+11-16 01:07:43 Audio: odbior 0 kb/s, wysylanie 80 kb/s, mikrofon wlaczony, uprawnienie mikrofonu jest  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)
+11-16 01:07:45 SIP: stan polaczenia End (Call terminated)
+11-16 01:07:45 Polaczenie zakonczone: Call terminated
+11-16 01:07:46 SIP: stan polaczenia Released (Call released)
+11-16 01:07:51 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:07:51 Polaczenie przychodzace: Furtka test
+11-16 01:07:51 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:07:51 Ekran rozmowy: utworzony
+11-16 01:07:51 Ekran: podglad RTSP
+11-16 01:07:51 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:07:51 Ekran rozmowy: widoczny
+11-16 01:07:52 Otwieranie furtki (panel www), tryb http
+11-16 01:07:52 RTSP: obraz odebrany (TCP)
+11-16 01:07:52 Furtka otwarta (HTTP 200 OK relay opened)
+11-16 01:07:56 SIP: stan polaczenia End (Call terminated)
+11-16 01:07:56 Polaczenie zakonczone: Call terminated
+11-16 01:07:56 SIP: stan polaczenia Released (Call released)
+11-16 01:08:00 Zapisano nowe ustawienia
+11-16 01:08:00 SIP: restart
+11-16 01:08:00 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:08:00 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:08:07 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:08:07 Polaczenie przychodzace: Furtka test
+11-16 01:08:07 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:08:07 Ekran rozmowy: utworzony
+11-16 01:08:07 Ekran: podglad RTSP
+11-16 01:08:07 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:08:07 Ekran rozmowy: widoczny
+11-16 01:08:08 RTSP: obraz odebrany (TCP)
+11-16 01:08:08 SIP: stan polaczenia Connected (Connected)
+11-16 01:08:08 SIP: stan polaczenia StreamsRunning (Connected (streams running))
+11-16 01:08:08 Rozmowa rozpoczeta
+11-16 01:08:09 Odebranie: brak kodu odebrania (ustawienia SIP) - serwer nie rozlaczy pozostalych urzadzen
+11-16 01:08:10 Otwieranie furtki (panel www), tryb both
+11-16 01:08:11 Audio: odbior 0 kb/s, wysylanie 82 kb/s, mikrofon wlaczony, uprawnienie mikrofonu jest  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)
+11-16 01:08:12 Furtka: HTTP nieosiagalny (failed to connect to /10.255.255.1 (port 80) from /10.0.2.16 (port 41008) after 2000ms) - wysylam kod DTMF
+11-16 01:08:12 SIP: wyslano DTMF # (RFC2833 + SIP INFO)
+11-16 01:08:12 Wysłano kod otwarcia furtki (poza siecią bramofonu)
+11-16 01:08:16 SIP: stan polaczenia End (Call terminated)
+11-16 01:08:16 Polaczenie zakonczone: Call terminated
+11-16 01:08:16 SIP: stan polaczenia Released (Call released)
+11-16 01:08:20 Zapisano nowe ustawienia
+11-16 01:08:20 SIP: restart
+11-16 01:08:20 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:08:20 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:08:26 Zapisano nowe ustawienia
+11-16 01:08:26 SIP: restart
+11-16 01:08:26 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:08:26 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:08:33 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:08:33 Polaczenie przychodzace: Furtka test
+11-16 01:08:33 SIP: stan polaczenia IncomingEarlyMedia (Incoming call early media)
+11-16 01:08:33 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:08:33 Ekran rozmowy: utworzony
+11-16 01:08:33 Ekran: obraz z polaczenia SIP (zrodlo: sip)
+11-16 01:08:33 Ekran rozmowy: widoczny
+11-16 01:08:33 Podglad: ciche odebranie, zeby obraz byl widoczny podczas dzwonienia
+11-16 01:08:33 SIP: stan polaczenia Connected (Connected)
+11-16 01:08:34 SIP: stan polaczenia StreamsRunning (Connected (streams running))
+11-16 01:08:34 Podglad: obraz podczas dzwonienia, rozmowa zacznie sie po "Odbierz"
+11-16 01:08:37 Audio: odbior 0 kb/s, wysylanie 80 kb/s, mikrofon wyciszony, uprawnienie mikrofonu jest  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)
+11-16 01:08:37 Wideo SIP: w polaczeniu od drugiej strony: NIE (kierunek SendRecv), uzgodnione: NIE, odbior 0 kb/s, wysylanie 0 kb/s  <- Połączenie przyszło bez obrazu – bramofon nie wysyła wideo w rozmowie SIP albo serwer SIP je usuwa.
+11-16 01:08:37 Rozmowa rozpoczeta (po podgladzie)
+11-16 01:08:37 Odebranie: brak kodu odebrania (ustawienia SIP) - serwer nie rozlaczy pozostalych urzadzen
+11-16 01:08:38 SIP: stan polaczenia End (Call terminated)
+11-16 01:08:38 Polaczenie zakonczone: Call terminated
+11-16 01:08:38 SIP: stan polaczenia Released (Call released)
+11-16 01:08:43 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:08:43 Polaczenie przychodzace: Furtka test
+11-16 01:08:43 SIP: stan polaczenia IncomingEarlyMedia (Incoming call early media)
+11-16 01:08:43 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:08:43 Ekran rozmowy: utworzony
+11-16 01:08:43 Ekran: obraz z polaczenia SIP (zrodlo: sip)
+11-16 01:08:43 Ekran rozmowy: widoczny
+11-16 01:08:43 Podglad: ciche odebranie, zeby obraz byl widoczny podczas dzwonienia
+11-16 01:08:43 SIP: stan polaczenia Connected (Connected)
+11-16 01:08:44 SIP: stan polaczenia StreamsRunning (Connected (streams running))
+11-16 01:08:44 Podglad: obraz podczas dzwonienia, rozmowa zacznie sie po "Odbierz"
+11-16 01:08:46 SIP: stan polaczenia End (Call terminated)
+11-16 01:08:46 Polaczenie zakonczone: Call terminated
+11-16 01:08:46 SIP: stan polaczenia Released (Call released)
+11-16 01:08:50 Zapisano nowe ustawienia
+11-16 01:08:50 SIP: restart
+11-16 01:08:50 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:08:50 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:08:57 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:08:57 Polaczenie przychodzace: Furtka test
+11-16 01:08:57 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:08:57 Ekran rozmowy: utworzony
+11-16 01:08:57 Ekran: podglad RTSP
+11-16 01:08:57 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:08:57 Ekran rozmowy: widoczny
+11-16 01:08:58 SIP: stan polaczenia End (Call ended)
+11-16 01:08:58 Polaczenie zakonczone: Call ended
+11-16 01:08:58 SIP: stan polaczenia Released (Call released)
+11-16 01:09:30 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:09:30 Polaczenie przychodzace: Furtka test
+11-16 01:09:30 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:09:30 Ekran rozmowy: utworzony
+11-16 01:09:30 Ekran: podglad RTSP
+11-16 01:09:30 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:09:30 Ekran rozmowy: widoczny
+11-16 01:09:31 RTSP: obraz odebrany (TCP)
+11-16 01:09:36 SIP: stan polaczenia Connected (Connected)
+11-16 01:09:36 SIP: stan polaczenia StreamsRunning (Connected (streams running))
+11-16 01:09:36 Rozmowa rozpoczeta
+11-16 01:09:37 Odebranie: brak kodu odebrania (ustawienia SIP) - serwer nie rozlaczy pozostalych urzadzen
+11-16 01:09:39 Audio: odbior 0 kb/s, wysylanie 78 kb/s, mikrofon wlaczony, uprawnienie mikrofonu jest  <- brak pakietow dzwieku z drugiej strony (zapora, NAT albo serwer SIP nie przekazuje dzwieku)
+11-16 01:09:42 SIP: stan polaczenia End (Call terminated)
+11-16 01:09:42 Polaczenie zakonczone: Call terminated
+11-16 01:09:42 SIP: stan polaczenia Released (Call released)
+11-16 01:09:52 Siec: zmiana (100 wlan0 fe80::6189:67c2:2e36:610a 10.0.2.16 fec0::ddbb:4c4e:1108:15f1 fec0::d8f:8951:e496:474f -> 101 radio0 fe80::f0a3:4bff:fe03:9d53 10.0.2.15 fec0::f0a3:4bff:fe03:9d53 fec0::a8a1:fe41:6c2c:10fc)
+11-16 01:09:52 Siec: rejestruje SIP od nowa pod nowym adresem
+11-16 01:09:52 SIP: restart
+11-16 01:09:53 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:09:53 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:10:01 Siec: zmiana (101 radio0 fe80::f0a3:4bff:fe03:9d53 10.0.2.15 fec0::f0a3:4bff:fe03:9d53 fec0::a8a1:fe41:6c2c:10fc -> 102 wlan0 fe80::6189:67c2:2e36:610a 10.0.2.16 fec0::ddbb:4c4e:1108:15f1 fec0::d8f:8951:e496:474f)
+11-16 01:10:01 Siec: rejestruje SIP od nowa pod nowym adresem
+11-16 01:10:01 SIP: restart
+11-16 01:10:01 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:10:01 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:10:11 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:10:11 Polaczenie przychodzace: Furtka test
+11-16 01:10:11 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:10:12 Ekran rozmowy: utworzony
+11-16 01:10:12 Ekran: podglad RTSP
+11-16 01:10:12 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:10:12 Ekran rozmowy: widoczny
+11-16 01:10:13 SIP: stan polaczenia End (Call terminated)
+11-16 01:10:13 Polaczenie zakonczone: Call terminated
+11-16 01:10:13 SIP: stan polaczenia Released (Call released)
+11-16 01:10:18 === Start procesu, wersja 1.1.15 ===
+11-16 01:10:18 Usluga: start
+11-16 01:10:18 SIP: kodeki wideo: H264 AV1 VP8
+11-16 01:10:19 SIP: uruchomiono, port 5060, bez rejestracji
+11-16 01:10:19 Panel www: http://10.0.2.16:8080
+11-16 01:10:19 Root: niedostepny (uprawnienia trzeba nadac recznie w aplikacji)
+11-16 01:10:28 SIP: stan polaczenia IncomingReceived (Incoming call received)
+11-16 01:10:28 Polaczenie przychodzace: Furtka test
+11-16 01:10:28 Ekran: otwieram ekran rozmowy (ekran wlaczony, wyswietlanie nad aplikacjami: tak, zgoda na pelny ekran: tak)
+11-16 01:10:28 Ekran rozmowy: utworzony
+11-16 01:10:28 Ekran: podglad RTSP
+11-16 01:10:28 RTSP: lacze z rtsp://10.0.2.2:8554/live/ch00_0 przez TCP (proba 1)
+11-16 01:10:28 Ekran rozmowy: widoczny
+11-16 01:10:30 RTSP: obraz odebrany (TCP)
+11-16 01:10:33 SIP: stan polaczenia End (Call terminated)
+11-16 01:10:33 Polaczenie zakonczone: Call terminated
+11-16 01:10:33 SIP: stan polaczenia Released (Call released)
