@@ -92,6 +92,7 @@ const GROUPS = [
   ]],
   ["Obraz z kamery", [
     ["video_source","select:auto=Automatycznie: RTSP w domu – wideo SIP poza domem,sip=Wideo w połączeniu SIP,rtsp=Strumień RTSP z bramofonu,jpeg=Zdjęcia JPEG z bramofonu (zapasowe)","Źródło obrazu","RTSP pokazuje obraz od pierwszej sekundy dzwonienia. JPEG to prostszy, zapasowy podgląd (kilka klatek na sekundę)."],
+    ["video_scale","select:auto=Automatycznie,fill=Cały ekran (przycięte brzegi),fit=Cały kadr (czarne pasy),stretch=Rozciągnięty","Dopasowanie obrazu","Automatycznie: na tablecie obraz wypełnia cały ekran, na telefonie widać cały kadr."],
     ["early_media","bool","Obraz SIP przed odebraniem","Działa, gdy bramofon wysyła wideo już podczas dzwonienia (early media)."],
     ["preview_answer","bool","Obraz podczas dzwonienia (ciche odebranie)","Aplikacja po cichu odbiera połączenie (mikrofon i głośnik wyciszone), żeby obraz SIP był widoczny już podczas dzwonienia; rozmowa zaczyna się po „Odbierz”. Uwaga: bramofon uzna połączenie za odebrane, więc inne urządzenia w grupie przestaną dzwonić."],
     ["sip_video_send","bool","Wysyłaj obraz zastępczy","Potrzebne, żeby obraz SIP docierał poza siecią domową (NAT). Kamera urządzenia nie jest używana."],

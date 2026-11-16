@@ -35,6 +35,12 @@ public class RtspPlayer {
     private VLCVideoLayout view;
     private String url;
     private Listener listener;
+    private String scale = "fit";
+
+    /** "fit" - caly kadr z pasami, "fill" - caly ekran z przycietymi brzegami, "stretch" - rozciagniety. */
+    public void setScale(String scale) {
+        this.scale = scale;
+    }
 
     public void start(Context ctx, VLCVideoLayout view, String url, boolean tcpPreferred, Listener listener) {
         this.ctx = ctx.getApplicationContext();
@@ -76,7 +82,9 @@ public class RtspPlayer {
             lib = new LibVLC(ctx, args);
             player = new MediaPlayer(lib);
             player.attachViews(view, null, false, true);
-            player.setVideoScale(MediaPlayer.ScaleType.SURFACE_BEST_FIT);
+            player.setVideoScale("fill".equals(scale) ? MediaPlayer.ScaleType.SURFACE_FIT_SCREEN
+                    : "stretch".equals(scale) ? MediaPlayer.ScaleType.SURFACE_FILL
+                    : MediaPlayer.ScaleType.SURFACE_BEST_FIT);
             player.setEventListener(event -> {
                 if (stopped) return;
                 switch (event.type) {

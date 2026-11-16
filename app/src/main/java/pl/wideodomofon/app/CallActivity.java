@@ -87,6 +87,9 @@ public class CallActivity extends Activity implements IntercomService.Ui {
                 finishNow();
                 return;
             }
+            if (sipVideoAttached && svc.sip() != null) {
+                svc.sip().applyVideoFill(video.getWidth(), video.getHeight(), "fill".equals(Cfg.videoScale(CallActivity.this)));
+            }
             // Obraz z polaczenia SIP: gdy nie dociera, pokaz na ekranie, na ktorym etapie ginie.
             if (sipVideoAttached && !test && svc.sip() != null && svc.state == IntercomService.IN_CALL) {
                 String problem = svc.sip().videoProblem();
@@ -137,6 +140,10 @@ public class CallActivity extends Activity implements IntercomService.Ui {
             L.i("Ekran: podglad JPEG");
             video.setVisibility(View.GONE);
             jpegView.setVisibility(View.VISIBLE);
+            String sc = Cfg.videoScale(this);
+            jpegView.setScaleType("fill".equals(sc) ? android.widget.ImageView.ScaleType.CENTER_CROP
+                    : "stretch".equals(sc) ? android.widget.ImageView.ScaleType.FIT_XY
+                    : android.widget.ImageView.ScaleType.FIT_CENTER);
             jpeg = new SnapshotPlayer();
             jpeg.start(jpegView, Cfg.s("jpeg_url"), statusListener);
             return;
@@ -146,6 +153,7 @@ public class CallActivity extends Activity implements IntercomService.Ui {
             L.i("Ekran: podglad RTSP");
             video.setVisibility(View.GONE);
             rtspView.setVisibility(View.VISIBLE);
+            rtsp.setScale(Cfg.videoScale(this));
             rtsp.start(this, rtspView, url, Cfg.b("rtsp_tcp"), statusListener);
         } else if (svc.sip() != null) {
             L.i("Ekran: obraz z polaczenia SIP (zrodlo: " + Cfg.s("video_source")

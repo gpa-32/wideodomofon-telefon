@@ -31,6 +31,7 @@ public final class Cfg {
             d.put("ice_enabled", false);
             // Obraz
             d.put("video_source", "sip");       // sip | rtsp | jpeg | auto (RTSP w domu, wideo SIP poza domem)
+            d.put("video_scale", "auto");       // auto (tablet: fill, telefon: fit) | fit | fill | stretch
             d.put("early_media", true);
             d.put("preview_answer", false);     // obraz podczas dzwonienia przez ciche odebranie
             d.put("sip_video_send", true);      // obraz zastepczy otwierajacy NAT dla wideo SIP         // obraz SIP przed odebraniem
@@ -140,6 +141,13 @@ public final class Cfg {
     public static final String QR_PREFIX = "WD1:";
     /** Ustawienia zwiazane z konkretnym urzadzeniem - nie przenosimy ich kodem QR. */
     private static final String[] QR_SKIP = {"web_enabled", "web_port", "web_pass"};
+
+    /** Sposob dopasowania obrazu: "fit" (caly kadr, pasy), "fill" (caly ekran, przyciete brzegi), "stretch". */
+    public static String videoScale(Context c) {
+        String v = s("video_scale");
+        if ("fit".equals(v) || "fill".equals(v) || "stretch".equals(v)) return v;
+        return isPhone(c) ? "fit" : "fill";
+    }
 
     /** Czy w polaczeniu SIP negocjowac obraz (zrodlo "sip" albo "auto"). */
     public static synchronized boolean sipVideo() {

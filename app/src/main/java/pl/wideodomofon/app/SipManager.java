@@ -176,6 +176,7 @@ public class SipManager {
                 }
                 call = cl;
                 connected = false;
+                lastZoom = 1f;
                 // Serwer moze podac kod odebrania w naglowku polaczenia - wtedy nie zalezy on od ustawien urzadzenia.
                 callAnswerCode = null;
                 try {
@@ -463,6 +464,35 @@ public class SipManager {
             L.e("SIP: rozlaczenie", t);
         }
     }
+
+    /**
+     * Dopasowuje obraz SIP do okna: przy "fill" powieksza go tak, zeby wypelnil caly ekran
+     * (brzegi przyciete, proporcje zachowane). Wolac cyklicznie - rozdzielczosc jest znana dopiero po chwili.
+     */
+    public void applyVideoFill(int viewW, int viewH, boolean fill) {
+        try {
+            if (call == null || viewW <= 0 || viewH <= 0) return;
+            float zoom = 1f;
+            if (fill) {
+                CallParams cp = call.getCurrentParams();
+                org.linphone.core.VideoDefinition vd = cp == null ? null : cp.getReceivedVideoDefinition();
+                if (vd == null || vd.getWidth() <= 0 || vd.getHeight() <= 0) return;
+                float va = vd.getWidth() / (float) vd.getHeight();
+                float wa = viewW / (float) viewH;
+                zoom = Math.max(va / wa, wa / va);
+                if (zoom > 3f) zoom = 3f;
+            }
+            if (Math.abs(zoom - lastZoom) > 0.01f) {
+                call.zoom(zoom, 0.5f, 0.5f);
+                lastZoom = zoom;
+                L.i(String.format(java.util.Locale.US, "Wideo SIP: powiekszenie %.2f (wypelnienie ekranu)", zoom));
+            }
+        } catch (Throwable t) {
+            L.e("SIP: dopasowanie obrazu", t);
+        }
+    }
+
+    private float lastZoom = 1f;
 
     public boolean isConnected() {
         return call != null && connected;
